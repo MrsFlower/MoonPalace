@@ -1,0 +1,7 @@
+// import {
+//   "username/engine" @lib,
+// }
+
+options(
+  "is-main": true,
+)
