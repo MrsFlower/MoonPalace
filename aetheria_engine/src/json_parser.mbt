@@ -3,9 +3,9 @@
 // 我们暂时构建一个原生的解析占位结构。
 
 pub(all) struct Vector3 {
-  x : Double
-  y : Double
-  z : Double
+  mut x : Double
+  mut y : Double
+  mut z : Double
 } derive(Eq, Show)
 
 pub(all) struct AABB {
