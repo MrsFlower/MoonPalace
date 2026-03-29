@@ -1,1 +1,10 @@
 target/\n.DS_Store\n*.exe\n*.out\nbuild/\n.moon/
+
+# Windows build artifacts and dependencies
+w64devkit/
+raylib/
+*.exe
+*.dll
+*.zip
+*.7z
+
