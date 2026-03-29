@@ -1,16 +1,33 @@
 // 核心 Raylib C-FFI 绑定
 // 为了性能和稳定性，我们将采用 "极薄绑定" 策略。
 
-fn init_window_wrapper(width: Int, height: Int) = "env" "InitWindow_wrapper"
-fn window_should_close_wrapper() -> Int = "env" "WindowShouldClose_wrapper"
-fn close_window_wrapper() = "env" "CloseWindow_wrapper"
-fn set_target_fps_wrapper(fps: Int) = "env" "SetTargetFPS_wrapper"
-fn begin_drawing_wrapper() = "env" "BeginDrawing_wrapper"
-fn end_drawing_wrapper() = "env" "EndDrawing_wrapper"
-fn clear_background_wrapper(r: Int, g: Int, b: Int, a: Int) = "env" "ClearBackground_wrapper"
-fn draw_text_wrapper(x: Int, y: Int, fontSize: Int, r: Int, g: Int, b: Int, a: Int) = "env" "DrawText_wrapper"
+extern "C" fn init_window_wrapper(width: Int, height: Int) = "InitWindow_wrapper"
+extern "C" fn window_should_close_wrapper() -> Int = "WindowShouldClose_wrapper"
+extern "C" fn close_window_wrapper() = "CloseWindow_wrapper"
+extern "C" fn set_target_fps_wrapper(fps: Int) = "SetTargetFPS_wrapper"
+extern "C" fn begin_drawing_wrapper() = "BeginDrawing_wrapper"
+extern "C" fn end_drawing_wrapper() = "EndDrawing_wrapper"
+extern "C" fn clear_background_wrapper(r: Int, g: Int, b: Int, a: Int) = "ClearBackground_wrapper"
 
-pub fn init_window(width: Int, height: Int, _title: String) -> Unit {
+// 安全传递字符串的 C-FFI 辅助函数
+extern "C" fn clear_text_buffer() = "clear_text_buffer"
+extern "C" fn append_text_char(c: Int) = "append_text_char"
+extern "C" fn draw_text_from_buffer(x: Int, y: Int, fontSize: Int, r: Int, g: Int, b: Int, a: Int) = "draw_text_from_buffer"
+
+// 3D 渲染支持
+extern "C" fn begin_mode_3d_wrapper(cam_px: Double, cam_py: Double, cam_pz: Double, tar_x: Double, tar_y: Double, tar_z: Double, up_x: Double, up_y: Double, up_z: Double, fovy: Double) = "BeginMode3D_wrapper"
+extern "C" fn end_mode_3d_wrapper() = "EndMode3D_wrapper"
+extern "C" fn draw_cube_wrapper(x: Double, y: Double, z: Double, w: Double, h: Double, l: Double, r: Int, g: Int, b: Int, a: Int) = "DrawCube_wrapper"
+extern "C" fn draw_cube_wires_wrapper(x: Double, y: Double, z: Double, w: Double, h: Double, l: Double, r: Int, g: Int, b: Int, a: Int) = "DrawCubeWires_wrapper"
+extern "C" fn draw_grid_wrapper(slices: Int, spacing: Double) = "DrawGrid_wrapper"
+extern "C" fn draw_fps_wrapper(x: Int, y: Int) = "DrawFPS_wrapper"
+
+pub fn init_window(width: Int, height: Int, title: String) -> Unit {
+  clear_text_buffer()
+  let bytes = title.to_bytes()
+  for i in 0..<bytes.length() {
+    append_text_char(bytes[i].to_int())
+  }
   init_window_wrapper(width, height)
 }
 
@@ -38,6 +55,36 @@ pub fn clear_background(r: Int, g: Int, b: Int, a: Int) -> Unit {
   clear_background_wrapper(r, g, b, a)
 }
 
-pub fn draw_text(_text: String, x: Int, y: Int, fontSize: Int, r: Int, g: Int, b: Int, a: Int) -> Unit {
-  draw_text_wrapper(x, y, fontSize, r, g, b, a)
+pub fn draw_text(text: String, x: Int, y: Int, fontSize: Int, r: Int, g: Int, b: Int, a: Int) -> Unit {
+  clear_text_buffer()
+  let bytes = text.to_bytes()
+  for i in 0..<bytes.length() {
+    append_text_char(bytes[i].to_int())
+  }
+  draw_text_from_buffer(x, y, fontSize, r, g, b, a)
 }
+
+pub fn draw_fps(x: Int, y: Int) -> Unit {
+  draw_fps_wrapper(x, y)
+}
+
+pub fn begin_mode_3d(cam_px: Double, cam_py: Double, cam_pz: Double, tar_x: Double, tar_y: Double, tar_z: Double, up_x: Double, up_y: Double, up_z: Double, fovy: Double) -> Unit {
+  begin_mode_3d_wrapper(cam_px, cam_py, cam_pz, tar_x, tar_y, tar_z, up_x, up_y, up_z, fovy)
+}
+
+pub fn end_mode_3d() -> Unit {
+  end_mode_3d_wrapper()
+}
+
+pub fn draw_cube(x: Double, y: Double, z: Double, w: Double, h: Double, l: Double, r: Int, g: Int, b: Int, a: Int) -> Unit {
+  draw_cube_wrapper(x, y, z, w, h, l, r, g, b, a)
+}
+
+pub fn draw_cube_wires(x: Double, y: Double, z: Double, w: Double, h: Double, l: Double, r: Int, g: Int, b: Int, a: Int) -> Unit {
+  draw_cube_wires_wrapper(x, y, z, w, h, l, r, g, b, a)
+}
+
+pub fn draw_grid(slices: Int, spacing: Double) -> Unit {
+  draw_grid_wrapper(slices, spacing)
+}
+

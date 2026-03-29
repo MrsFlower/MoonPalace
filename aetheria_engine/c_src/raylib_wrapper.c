@@ -3,18 +3,33 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Moonbit String (utf16) to C String (utf8) helper
-// This is a simplified version. In a real engine, you'd need proper UTF-16 to UTF-8 conversion.
-// Moonbit passes strings as pointers. For now, we assume simple ASCII compatibility or use a proper conversion layer.
-// To keep it robust and simple for Phase 1:
+// Text buffer to safely receive string data from Moonbit
+static char text_buffer[1024];
+static int text_len = 0;
 
-extern void* moonbit_malloc(size_t size);
+void clear_text_buffer() {
+    text_len = 0;
+    text_buffer[0] = '\0';
+}
 
-void InitWindow_wrapper(int32_t width, int32_t height, void* title_ptr) {
-    // In a real robust binding, we need to decode the Moonbit string pointer.
-    // For Phase 1 testing, we use a hardcoded title if decoding is complex, 
-    // or implement a basic byte extraction.
-    InitWindow(width, height, "Aetheria3D Engine");
+void append_text_char(int32_t c) {
+    if (text_len < 1023) {
+        text_buffer[text_len++] = (char)c;
+        text_buffer[text_len] = '\0';
+    }
+}
+
+void draw_text_from_buffer(int32_t x, int32_t y, int32_t fontSize, int32_t r, int32_t g, int32_t b, int32_t a) {
+    Color color = { (unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)a };
+    DrawText(text_buffer, x, y, fontSize, color);
+}
+
+void DrawFPS_wrapper(int32_t x, int32_t y) {
+    DrawFPS(x, y);
+}
+
+void InitWindow_wrapper(int32_t width, int32_t height) {
+    InitWindow(width, height, text_len > 0 ? text_buffer : "Aetheria3D Engine");
 }
 
 int32_t WindowShouldClose_wrapper() {
@@ -42,7 +57,35 @@ void ClearBackground_wrapper(int32_t r, int32_t g, int32_t b, int32_t a) {
     ClearBackground(color);
 }
 
-void DrawText_wrapper(void* text_ptr, int32_t x, int32_t y, int32_t fontSize, int32_t r, int32_t g, int32_t b, int32_t a) {
+// 3D Rendering Wrappers
+static Camera3D current_camera = { 0 };
+
+void BeginMode3D_wrapper(double cam_px, double cam_py, double cam_pz, 
+                         double tar_x, double tar_y, double tar_z, 
+                         double up_x, double up_y, double up_z, 
+                         double fovy) {
+    current_camera.position = (Vector3){ (float)cam_px, (float)cam_py, (float)cam_pz };
+    current_camera.target = (Vector3){ (float)tar_x, (float)tar_y, (float)tar_z };
+    current_camera.up = (Vector3){ (float)up_x, (float)up_y, (float)up_z };
+    current_camera.fovy = (float)fovy;
+    current_camera.projection = CAMERA_PERSPECTIVE;
+    BeginMode3D(current_camera);
+}
+
+void EndMode3D_wrapper() {
+    EndMode3D();
+}
+
+void DrawCube_wrapper(double x, double y, double z, double w, double h, double l, int32_t r, int32_t g, int32_t b, int32_t a) {
     Color color = { (unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)a };
-    DrawText("Moonbit Raylib FFI Working!", x, y, fontSize, color);
+    DrawCube((Vector3){(float)x, (float)y, (float)z}, (float)w, (float)h, (float)l, color);
+}
+
+void DrawCubeWires_wrapper(double x, double y, double z, double w, double h, double l, int32_t r, int32_t g, int32_t b, int32_t a) {
+    Color color = { (unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)a };
+    DrawCubeWires((Vector3){(float)x, (float)y, (float)z}, (float)w, (float)h, (float)l, color);
+}
+
+void DrawGrid_wrapper(int32_t slices, double spacing) {
+    DrawGrid(slices, (float)spacing);
 }
