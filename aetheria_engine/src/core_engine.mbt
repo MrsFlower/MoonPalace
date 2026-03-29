@@ -60,7 +60,22 @@ pub fn Engine::get_state_string(self : Engine) -> String {
 // 模拟渲染循环的输出
 pub fn Engine::render(self : Engine) -> String {
   let mut output = "--- FRAME \{self.frame_count} ---\n"
-  output = output + "3D Scene Rendered (Camera at \{self.player_pos.x}, \{self.player_pos.y}, \{self.player_pos.z})\n"
+  
+  // 增加更直观的可视化字符画
+  let pos_x = self.player_pos.x.to_int()
+  let mut visual_scene = ""
+  for i in 0..<20 {
+    if i == pos_x {
+      visual_scene = visual_scene + "🕺" // 玩家
+    } else if i == 6 {
+      visual_scene = visual_scene + "📦" // 隐藏物品
+    } else {
+      visual_scene = visual_scene + "_" // 地板
+    }
+  }
+  
+  output = output + "3D Scene Rendered:\n"
+  output = output + "[ " + visual_scene + " ]\n"
   output = output + self.ui.render_mock(self.player_pos, 60, self.get_state_string())
   output + "\n-------------------\n"
 }
