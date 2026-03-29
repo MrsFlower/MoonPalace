@@ -57,6 +57,15 @@ void ClearBackground_wrapper(int32_t r, int32_t g, int32_t b, int32_t a) {
     ClearBackground(color);
 }
 
+// Input Wrappers
+int32_t IsKeyDown_wrapper(int32_t key) {
+    return IsKeyDown(key) ? 1 : 0;
+}
+
+int32_t IsKeyPressed_wrapper(int32_t key) {
+    return IsKeyPressed(key) ? 1 : 0;
+}
+
 // 3D Rendering Wrappers
 static Camera3D current_camera = { 0 };
 

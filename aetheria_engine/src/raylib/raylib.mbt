@@ -9,6 +9,10 @@ extern "C" fn begin_drawing_wrapper() = "BeginDrawing_wrapper"
 extern "C" fn end_drawing_wrapper() = "EndDrawing_wrapper"
 extern "C" fn clear_background_wrapper(r: Int, g: Int, b: Int, a: Int) = "ClearBackground_wrapper"
 
+// 键盘输入
+extern "C" fn is_key_down_wrapper(key: Int) -> Int = "IsKeyDown_wrapper"
+extern "C" fn is_key_pressed_wrapper(key: Int) -> Int = "IsKeyPressed_wrapper"
+
 // 安全传递字符串的 C-FFI 辅助函数
 extern "C" fn clear_text_buffer() = "clear_text_buffer"
 extern "C" fn append_text_char(c: Int) = "append_text_char"
@@ -21,6 +25,17 @@ extern "C" fn draw_cube_wrapper(x: Double, y: Double, z: Double, w: Double, h: D
 extern "C" fn draw_cube_wires_wrapper(x: Double, y: Double, z: Double, w: Double, h: Double, l: Double, r: Int, g: Int, b: Int, a: Int) = "DrawCubeWires_wrapper"
 extern "C" fn draw_grid_wrapper(slices: Int, spacing: Double) = "DrawGrid_wrapper"
 extern "C" fn draw_fps_wrapper(x: Int, y: Int) = "DrawFPS_wrapper"
+
+// Raylib 键盘常量 (部分)
+pub let key_w: Int = 87
+pub let key_a: Int = 65
+pub let key_s: Int = 83
+pub let key_d: Int = 68
+pub let key_up: Int = 265
+pub let key_down: Int = 264
+pub let key_left: Int = 263
+pub let key_right: Int = 262
+pub let key_space: Int = 32
 
 pub fn init_window(width: Int, height: Int, title: String) -> Unit {
   clear_text_buffer()
@@ -53,6 +68,14 @@ pub fn end_drawing() -> Unit {
 
 pub fn clear_background(r: Int, g: Int, b: Int, a: Int) -> Unit {
   clear_background_wrapper(r, g, b, a)
+}
+
+pub fn is_key_down(key: Int) -> Bool {
+  is_key_down_wrapper(key) != 0
+}
+
+pub fn is_key_pressed(key: Int) -> Bool {
+  is_key_pressed_wrapper(key) != 0
 }
 
 pub fn draw_text(text: String, x: Int, y: Int, fontSize: Int, r: Int, g: Int, b: Int, a: Int) -> Unit {
