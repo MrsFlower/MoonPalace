@@ -1,5 +1,5 @@
 test "parse_world_data mock" {
-  let mock_json = "{ \"test\": true }"
+  let mock_json = "{ \"ground\": true, \"Welcome\": true }"
   let data = parse_world_data(mock_json)
   
   assert_eq(data.spawn_point.y, 5.0) |> ignore
