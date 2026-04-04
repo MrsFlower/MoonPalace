@@ -1,3 +1,7 @@
 {
-  "is_main": false
+  "is_main": false,
+  "import": [
+    "moonbitlang/core/json",
+    "moonbitlang/core/math"
+  ]
 }
