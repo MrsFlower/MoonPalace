@@ -93,3 +93,59 @@ pub fn VoxelWorld::check_collision(self: VoxelWorld, px: Double, py: Double, pz:
   }
   false
 }
+
+pub(all) struct UVRect {
+  u_min: Double
+  v_min: Double
+  u_max: Double
+  v_max: Double
+} derive(Show, Eq)
+
+pub fn parse_materials_json(json_str: String) -> Result[Map[Int, UVRect], String] {
+  let parse_result = @json.parse(json_str) catch {
+    _ => return Err("JSON parse error")
+  }
+  
+  let map_out = Map::new()
+  match parse_result {
+    Json::Object(map) => {
+      for key, value in map {
+        let mat_id = try {
+          @strconv.parse_int(key)
+        } catch {
+          _ => continue
+        }
+        match value {
+          Json::Object(uv_map) => {
+            let mut u_min = 0.0
+            let mut v_min = 0.0
+            let mut u_max = 1.0
+            let mut v_max = 1.0
+            
+            match uv_map.get("u_min") {
+              Some(Json::Number(n, ..)) => { u_min = n }
+              _ => ()
+            }
+            match uv_map.get("v_min") {
+              Some(Json::Number(n, ..)) => { v_min = n }
+              _ => ()
+            }
+            match uv_map.get("u_max") {
+              Some(Json::Number(n, ..)) => { u_max = n }
+              _ => ()
+            }
+            match uv_map.get("v_max") {
+              Some(Json::Number(n, ..)) => { v_max = n }
+              _ => ()
+            }
+            
+            map_out.set(mat_id, {u_min, v_min, u_max, v_max})
+          }
+          _ => ()
+        }
+      }
+      Ok(map_out)
+    }
+    _ => Err("Root must be an object")
+  }
+}

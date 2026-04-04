@@ -28,3 +28,13 @@ test "VoxelWorld collision detection" {
   // 边界外
   assert_false(world.check_collision(4.0, 0.0, 4.0))
 }
+
+test "parse materials json" {
+  let mock_json = "{\"1\": {\"u_min\": 0.0, \"v_min\": 0.0, \"u_max\": 0.5, \"v_max\": 0.5}}"
+  match parse_materials_json(mock_json) {
+    Ok(map) => {
+      assert_eq(map.get(1), Some({ u_min: 0.0, v_min: 0.0, u_max: 0.5, v_max: 0.5 }))
+    }
+    Err(_) => fail("Failed to parse mock JSON")
+  }
+}

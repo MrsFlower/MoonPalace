@@ -3,5 +3,10 @@
   "import": [
     "aetheria/engine/src",
     "aetheria/engine/src/raylib"
-  ]
+  ],
+  "link": {
+    "native": {
+      "cc-link-flags": "src/raylib/raylib_wrapper.c -I../raylib/raylib-5.0_win64_mingw-w64/include -L../raylib/raylib-5.0_win64_mingw-w64/lib -lraylib -lgdi32 -lwinmm"
+    }
+  }
 }

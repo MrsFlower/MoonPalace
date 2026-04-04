@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <rlgl.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +18,77 @@ void append_text_char(int32_t c) {
         text_buffer[text_len++] = (char)c;
         text_buffer[text_len] = '\0';
     }
+}
+
+static Texture2D current_atlas = {0};
+
+void load_atlas_from_buffer() {
+    if (current_atlas.id != 0) {
+        UnloadTexture(current_atlas);
+    }
+    current_atlas = LoadTexture(text_buffer);
+}
+
+void begin_voxel_batch() {
+    rlSetTexture(current_atlas.id);
+    rlBegin(RL_QUADS);
+    rlColor4ub(255, 255, 255, 255);
+}
+
+void end_voxel_batch() {
+    rlEnd();
+    rlSetTexture(0);
+}
+
+// 绘制一个带贴图的立方体，贴图取自 atlas 中指定的 UV 区域 (u, v, width, height)
+void draw_voxel_faces(double x, double y, double z, double size, 
+                      double u, double v, double uv_w, double uv_h) {
+    float xf = (float)x;
+    float yf = (float)y;
+    float zf = (float)z;
+    float s = (float)(size / 2.0);
+    
+    // Front Face
+    rlNormal3f(0.0f, 0.0f, 1.0f);
+    rlTexCoord2f(u, v + uv_h); rlVertex3f(xf - s, yf - s, zf + s);
+    rlTexCoord2f(u + uv_w, v + uv_h); rlVertex3f(xf + s, yf - s, zf + s);
+    rlTexCoord2f(u + uv_w, v); rlVertex3f(xf + s, yf + s, zf + s);
+    rlTexCoord2f(u, v); rlVertex3f(xf - s, yf + s, zf + s);
+
+    // Back Face
+    rlNormal3f(0.0f, 0.0f, -1.0f);
+    rlTexCoord2f(u + uv_w, v + uv_h); rlVertex3f(xf - s, yf - s, zf - s);
+    rlTexCoord2f(u + uv_w, v); rlVertex3f(xf - s, yf + s, zf - s);
+    rlTexCoord2f(u, v); rlVertex3f(xf + s, yf + s, zf - s);
+    rlTexCoord2f(u, v + uv_h); rlVertex3f(xf + s, yf - s, zf - s);
+
+    // Top Face
+    rlNormal3f(0.0f, 1.0f, 0.0f);
+    rlTexCoord2f(u, v + uv_h); rlVertex3f(xf - s, yf + s, zf - s);
+    rlTexCoord2f(u, v); rlVertex3f(xf - s, yf + s, zf + s);
+    rlTexCoord2f(u + uv_w, v); rlVertex3f(xf + s, yf + s, zf + s);
+    rlTexCoord2f(u + uv_w, v + uv_h); rlVertex3f(xf + s, yf + s, zf - s);
+
+    // Bottom Face
+    rlNormal3f(0.0f, -1.0f, 0.0f);
+    rlTexCoord2f(u + uv_w, v + uv_h); rlVertex3f(xf - s, yf - s, zf - s);
+    rlTexCoord2f(u, v + uv_h); rlVertex3f(xf + s, yf - s, zf - s);
+    rlTexCoord2f(u, v); rlVertex3f(xf + s, yf - s, zf + s);
+    rlTexCoord2f(u + uv_w, v); rlVertex3f(xf - s, yf - s, zf + s);
+
+    // Right face
+    rlNormal3f(1.0f, 0.0f, 0.0f);
+    rlTexCoord2f(u + uv_w, v + uv_h); rlVertex3f(xf + s, yf - s, zf - s);
+    rlTexCoord2f(u + uv_w, v); rlVertex3f(xf + s, yf + s, zf - s);
+    rlTexCoord2f(u, v); rlVertex3f(xf + s, yf + s, zf + s);
+    rlTexCoord2f(u, v + uv_h); rlVertex3f(xf + s, yf - s, zf + s);
+
+    // Left Face
+    rlNormal3f(-1.0f, 0.0f, 0.0f);
+    rlTexCoord2f(u, v + uv_h); rlVertex3f(xf - s, yf - s, zf - s);
+    rlTexCoord2f(u + uv_w, v + uv_h); rlVertex3f(xf - s, yf - s, zf + s);
+    rlTexCoord2f(u + uv_w, v); rlVertex3f(xf - s, yf + s, zf + s);
+    rlTexCoord2f(u, v); rlVertex3f(xf - s, yf + s, zf - s);
 }
 
 void draw_text_from_buffer(int32_t x, int32_t y, int32_t fontSize, int32_t r, int32_t g, int32_t b, int32_t a) {

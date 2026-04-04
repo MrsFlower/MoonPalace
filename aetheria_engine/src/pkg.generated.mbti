@@ -1,0 +1,115 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "aetheria/engine/src"
+
+// Values
+pub fn check_collision_aabb(AABB, AABB) -> Bool
+
+pub fn check_point_in_aabb(Vector3, AABB) -> Bool
+
+pub fn parse_world_data(String) -> WorldData
+
+pub fn process_3d_asset(InputFormat, String) -> PipelineResult
+
+// Errors
+
+// Types and methods
+pub(all) struct AABB {
+  id : String
+  min : Vector3
+  max : Vector3
+}
+pub impl Eq for AABB
+pub impl Show for AABB
+
+pub struct Engine {
+  mut state : GameState
+  mut frame_count : Int
+  ui : UIManager
+  player_pos : Vector3
+}
+pub fn Engine::dismiss_dialog(Self) -> Unit
+pub fn Engine::get_state_string(Self) -> String
+pub fn Engine::new() -> Self
+pub fn Engine::update(Self, Double, Double) -> Unit
+
+pub(all) enum GameState {
+  Init
+  Loading
+  Roam
+  Dialog
+}
+pub impl Eq for GameState
+pub impl Show for GameState
+
+pub(all) enum InputFormat {
+  OBJ
+  PLY
+}
+pub impl Eq for InputFormat
+pub impl Show for InputFormat
+
+pub struct PhysicsEngine {
+  colliders : Array[AABB]
+}
+pub fn PhysicsEngine::new(Array[AABB]) -> Self
+pub fn PhysicsEngine::try_move(Self, AABB, Vector3) -> Bool
+
+pub struct PipelineResult {
+  render_model_path : String
+  colliders : Array[AABB]
+}
+
+pub(all) struct StoryNode {
+  id : String
+  position : Vector3
+  radius : Double
+  text : String
+}
+pub impl Eq for StoryNode
+pub impl Show for StoryNode
+
+pub struct UIManager {
+  mut active_dialog : String?
+  mut show_debug : Bool
+}
+pub fn UIManager::hide_dialog(Self) -> Unit
+pub fn UIManager::new() -> Self
+pub fn UIManager::render_mock(Self, Vector3, Int, String) -> String
+pub fn UIManager::show_dialog(Self, String) -> Unit
+pub fn UIManager::toggle_debug(Self) -> Unit
+pub fn UIManager::update(Self) -> Unit
+
+pub(all) struct Vector3 {
+  mut x : Double
+  mut y : Double
+  mut z : Double
+}
+pub impl Eq for Vector3
+pub impl Show for Vector3
+
+pub(all) struct Voxel {
+  x : Int
+  y : Int
+  z : Int
+  mat_id : Int
+}
+pub impl Eq for Voxel
+pub impl Show for Voxel
+
+pub struct VoxelWorld {
+  voxels : Array[Voxel]
+}
+pub fn VoxelWorld::check_collision(Self, Double, Double, Double) -> Bool
+pub fn VoxelWorld::load_from_json(String) -> Result[Self, String]
+pub fn VoxelWorld::new() -> Self
+
+pub(all) struct WorldData {
+  spawn_point : Vector3
+  colliders : Array[AABB]
+  story_nodes : Array[StoryNode]
+}
+
+// Type aliases
+
+// Traits
+

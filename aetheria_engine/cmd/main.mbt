@@ -5,6 +5,7 @@ fn main {
   
   @raylib.init_window(800, 600, "Aetheria3D - Moonbit & Raylib")
   @raylib.set_target_fps(60)
+  @raylib.load_texture_atlas("assets/atlas_albedo.png")
 
   while not(@raylib.window_should_close()) {
     // 收集输入
@@ -29,23 +30,43 @@ fn main {
     
     // Draw 3D Scene
     @raylib.begin_mode_3d(
-      0.0, 10.0, 10.0, // camera position
-      0.0, 0.0, 0.0,   // camera target
+      engine.player_pos.x, engine.player_pos.y + 10.0, engine.player_pos.z + 10.0, // camera position
+      engine.player_pos.x, engine.player_pos.y, engine.player_pos.z,   // camera target
       0.0, 1.0, 0.0,   // camera up
       45.0             // fovy
     )
     
     @raylib.draw_grid(20, 1.0)
     
-    // Draw player as a cube
+    // Draw player as a red cube
     let px = engine.player_pos.x
     let py = engine.player_pos.y
     let pz = engine.player_pos.z
-    @raylib.draw_cube(px, py, pz, 1.0, 1.0, 1.0, 50, 150, 250, 255)
-    @raylib.draw_cube_wires(px, py, pz, 1.0, 1.0, 1.0, 20, 80, 150, 255)
+    @raylib.draw_cube(px, py, pz, 0.8, 0.8, 0.8, 250, 50, 50, 255)
+    @raylib.draw_cube_wires(px, py, pz, 0.8, 0.8, 0.8, 20, 20, 20, 255)
     
-    // Draw a hidden item box
-    @raylib.draw_cube(6.0, 0.5, 0.0, 1.0, 1.0, 1.0, 200, 150, 50, 255)
+    // Render the voxel world using texture atlas
+    @raylib.begin_texture_mode()
+    for v in engine.world.voxels {
+      // Find UV rect
+      let mut u_min = 0.0
+      let mut v_min = 0.0
+      let mut uv_w = 1.0
+      let mut uv_h = 1.0
+      
+      match engine.materials.get(v.mat_id) {
+        Some(rect) => {
+          u_min = rect.u_min
+          v_min = rect.v_min
+          uv_w = rect.u_max - rect.u_min
+          uv_h = rect.v_max - rect.v_min
+        }
+        None => ()
+      }
+      
+      @raylib.draw_textured_voxel(v.x.to_double(), v.y.to_double(), v.z.to_double(), 1.0, u_min, v_min, uv_w, uv_h)
+    }
+    @raylib.end_texture_mode()
     
     @raylib.end_mode_3d()
     

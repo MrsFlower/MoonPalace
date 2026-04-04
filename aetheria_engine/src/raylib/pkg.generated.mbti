@@ -1,0 +1,70 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "aetheria/engine/src/raylib"
+
+// Values
+pub fn begin_drawing() -> Unit
+
+pub fn begin_mode_3d(Double, Double, Double, Double, Double, Double, Double, Double, Double, Double) -> Unit
+
+pub fn begin_texture_mode() -> Unit
+
+pub fn clear_background(Int, Int, Int, Int) -> Unit
+
+pub fn close_window() -> Unit
+
+pub fn draw_cube(Double, Double, Double, Double, Double, Double, Int, Int, Int, Int) -> Unit
+
+pub fn draw_cube_wires(Double, Double, Double, Double, Double, Double, Int, Int, Int, Int) -> Unit
+
+pub fn draw_fps(Int, Int) -> Unit
+
+pub fn draw_grid(Int, Double) -> Unit
+
+pub fn draw_text(String, Int, Int, Int, Int, Int, Int, Int) -> Unit
+
+pub fn draw_textured_voxel(Double, Double, Double, Double, Double, Double, Double, Double) -> Unit
+
+pub fn end_drawing() -> Unit
+
+pub fn end_mode_3d() -> Unit
+
+pub fn end_texture_mode() -> Unit
+
+pub fn init_window(Int, Int, String) -> Unit
+
+pub fn is_key_down(Int) -> Bool
+
+pub fn is_key_pressed(Int) -> Bool
+
+pub let key_a : Int
+
+pub let key_d : Int
+
+pub let key_down : Int
+
+pub let key_left : Int
+
+pub let key_right : Int
+
+pub let key_s : Int
+
+pub let key_space : Int
+
+pub let key_up : Int
+
+pub let key_w : Int
+
+pub fn load_texture_atlas(String) -> Unit
+
+pub fn set_target_fps(Int) -> Unit
+
+pub fn window_should_close() -> Bool
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

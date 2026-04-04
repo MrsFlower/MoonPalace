@@ -18,6 +18,12 @@ extern "C" fn clear_text_buffer() = "clear_text_buffer"
 extern "C" fn append_text_char(c: Int) = "append_text_char"
 extern "C" fn draw_text_from_buffer(x: Int, y: Int, fontSize: Int, r: Int, g: Int, b: Int, a: Int) = "draw_text_from_buffer"
 
+// Texture Atlas FFI
+extern "C" fn load_atlas_from_buffer() = "load_atlas_from_buffer"
+extern "C" fn begin_voxel_batch() = "begin_voxel_batch"
+extern "C" fn end_voxel_batch() = "end_voxel_batch"
+extern "C" fn draw_voxel_faces(x: Double, y: Double, z: Double, size: Double, u: Double, v: Double, uv_w: Double, uv_h: Double) = "draw_voxel_faces"
+
 // 3D 渲染支持
 extern "C" fn begin_mode_3d_wrapper(cam_px: Double, cam_py: Double, cam_pz: Double, tar_x: Double, tar_y: Double, tar_z: Double, up_x: Double, up_y: Double, up_z: Double, fovy: Double) = "BeginMode3D_wrapper"
 extern "C" fn end_mode_3d_wrapper() = "EndMode3D_wrapper"
@@ -39,9 +45,8 @@ pub let key_space: Int = 32
 
 pub fn init_window(width: Int, height: Int, title: String) -> Unit {
   clear_text_buffer()
-  let bytes = title.to_bytes()
-  for i in 0..<bytes.length() {
-    append_text_char(bytes[i].to_int())
+  for c in title {
+    append_text_char(c.to_int())
   }
   init_window_wrapper(width, height)
 }
@@ -80,11 +85,30 @@ pub fn is_key_pressed(key: Int) -> Bool {
 
 pub fn draw_text(text: String, x: Int, y: Int, fontSize: Int, r: Int, g: Int, b: Int, a: Int) -> Unit {
   clear_text_buffer()
-  let bytes = text.to_bytes()
-  for i in 0..<bytes.length() {
-    append_text_char(bytes[i].to_int())
+  for c in text {
+    append_text_char(c.to_int())
   }
   draw_text_from_buffer(x, y, fontSize, r, g, b, a)
+}
+
+pub fn load_texture_atlas(path: String) -> Unit {
+  clear_text_buffer()
+  for c in path {
+    append_text_char(c.to_int())
+  }
+  load_atlas_from_buffer()
+}
+
+pub fn begin_texture_mode() -> Unit {
+  begin_voxel_batch()
+}
+
+pub fn end_texture_mode() -> Unit {
+  end_voxel_batch()
+}
+
+pub fn draw_textured_voxel(x: Double, y: Double, z: Double, size: Double, u: Double, v: Double, uv_w: Double, uv_h: Double) -> Unit {
+  draw_voxel_faces(x, y, z, size, u, v, uv_w, uv_h)
 }
 
 pub fn draw_fps(x: Int, y: Int) -> Unit {

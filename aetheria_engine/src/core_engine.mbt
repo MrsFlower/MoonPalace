@@ -14,14 +14,44 @@ pub struct Engine {
   mut frame_count : Int
   ui : UIManager
   player_pos : Vector3
+  world : VoxelWorld
+  materials : Map[Int, UVRect]
 }
 
 pub fn Engine::new() -> Engine {
+  // Load JSON data
+  let mut world = VoxelWorld::new()
+  let mut materials = Map::new()
+  
+  let asset_json = try {
+    @fs.read_file_to_string("assets/asset.json")
+  } catch {
+    _ => "[]"
+  }
+  
+  match VoxelWorld::load_from_json(asset_json) {
+    Ok(w) => world = w
+    Err(e) => println("Error loading asset.json: \{e}")
+  }
+  
+  let materials_json = try {
+    @fs.read_file_to_string("assets/materials.json")
+  } catch {
+    _ => "{}"
+  }
+  
+  match parse_materials_json(materials_json) {
+    Ok(m) => materials = m
+    Err(e) => println("Error loading materials.json: \{e}")
+  }
+
   { 
     state: Roam, // 跳过 Init 和 Loading，直接进入 Roam 模式测试控制
     frame_count: 0,
     ui: UIManager::new(),
-    player_pos: { x: 0.0, y: 0.5, z: 0.0 }
+    player_pos: { x: 0.0, y: 1.0, z: 0.0 },
+    world,
+    materials
   }
 }
 
@@ -37,24 +67,15 @@ pub fn Engine::update(self : Engine, input_x: Double, input_z: Double) -> Unit {
     let next_x = self.player_pos.x + input_x * speed
     let next_z = self.player_pos.z + input_z * speed
 
-    // AABB 碰撞检测 (Player: 1x1x1 at next_pos, Target: 1x1x1 at 6.0, 0.5, 0.0)
-    let target_x = 6.0
-    let target_z = 0.0
-    let size = 1.0
-
-    // 检查是否在 X 轴和 Z 轴上重叠
-    let dx = next_x - target_x
-    let dz = next_z - target_z
-    let abs_dx = if dx < 0.0 { -dx } else { dx }
-    let abs_dz = if dz < 0.0 { -dz } else { dz }
-    
-    let hit_x = abs_dx < size
-    let hit_z = abs_dz < size
-
-    if hit_x && hit_z {
-      // 发生碰撞，不更新位置，并触发对话框
-      self.state = Dialog
-      self.ui.show_dialog("You found a hidden item!")
+    // 碰撞检测
+    if self.world.check_collision(next_x, self.player_pos.y, next_z) {
+      // 发生碰撞，不更新位置
+      // 如果发生碰撞且目标材质是特殊的（例如我们模拟一个宝箱在 mat_id = 3），可以触发对话
+      // 这里做一个简化的假设：假设所有方块都是固体，只有靠近特定坐标才会弹窗
+      if (next_x - 6.0)*(next_x - 6.0) + (next_z - 0.0)*(next_z - 0.0) < 1.0 {
+        self.state = Dialog
+        self.ui.show_dialog("You bumped into a special voxel!")
+      }
     } else {
       // 未发生碰撞，更新位置
       self.player_pos.x = next_x
