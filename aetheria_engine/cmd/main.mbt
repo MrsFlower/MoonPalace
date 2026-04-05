@@ -17,20 +17,25 @@ fn main {
     // 但在 Custom 模式下，不需要 disable。我们在启动时默认显示鼠标。
     @raylib.show_cursor()
 
-    // 加载 GLB 模型 Chunks
+    let mut current_chunk_to_load = 0
     let chunk_count = engine.get_chunk_count()
-    if chunk_count > 0 {
-      println("Loading \{chunk_count} model chunks...")
-      for i = 0; i < chunk_count; i = i + 1 {
-        let path = "../aetheria_engine/assets/chunks/chunk_\{i}.glb"
-        @raylib.load_chunk_model(i, path)
-      }
-    } else {
-      // Fallback
-      @raylib.load_global_model("../aetheria_engine/assets/mock_house_3x3x3.glb")
-    }
 
   while not(@raylib.window_should_close()) {
+    // 渐进式加载模型 Chunks (每帧加载一个，避免画面卡死未响应)
+    if current_chunk_to_load < chunk_count {
+      let path = "../aetheria_engine/assets/chunks/chunk_\{current_chunk_to_load}.glb"
+      @raylib.load_chunk_model(current_chunk_to_load, path)
+      current_chunk_to_load = current_chunk_to_load + 1
+      
+      // 如果还没加载完，先画个 Loading 界面
+      @raylib.begin_drawing()
+      @raylib.clear_background(20, 20, 20, 255)
+      @raylib.draw_text("Loading Model Chunks...", 300, 250, 20, 200, 200, 200, 255)
+      let progress = "Progress: \{current_chunk_to_load} / \{chunk_count}"
+      @raylib.draw_text(progress, 320, 300, 20, 100, 255, 100, 255)
+      @raylib.end_drawing()
+      continue
+    }
     // 收集输入
     let mut input_x = 0.0
     let mut input_z = 0.0
@@ -62,14 +67,14 @@ fn main {
     } else {
       // Locked Mode - 只有按住鼠标左键时才允许转动视角
       if @raylib.is_mouse_button_down(0) { // 0 = left mouse button
-        // 之前使用 disable_cursor 会导致鼠标被锁死在中心。我们用 hide_cursor。
-        // 但 Raylib 的 camera_custom 有可能不会处理鼠标 delta，我们其实也不用它处理，我们在 core_engine.mbt 里面处理了
-        // 问题在于，如果没有禁用 cursor，鼠标可能移出窗口外。
-        // 但是使用 disable_cursor 会每帧把鼠标移回中心（这是操作系统的行为）。
-        // 其实这是正常的 FPS 游戏行为：鼠标锁定在中心，只获取 delta。
-        // 问题是如果松开鼠标，我们要把鼠标放回原来的地方？Raylib的 DisableCursor 会记住原来位置。
-        // 如果每次 down 都 disable，每次 up 都 enable，这可能会导致抖动。
-        // 我们只在状态发生改变的那一帧调用 disable/enable。
+        // 实际上，Raylib 的 DisableCursor() 会在底层通过 glfwSetInputMode 将光标锁定在中心。
+        // 这是第一人称相机的标准做法，如果不锁在中心，鼠标移动到屏幕边缘就会停住，DeltaX/Y 就变成了 0。
+        // 您说的画面抽动并弹回原处，是因为之前我们用了 `HideCursor()`。
+        // `HideCursor()` 只隐藏了光标，但光标仍然会撞到屏幕边缘。
+        // 当光标撞到屏幕边缘，甚至跳出窗口范围时，操作系统处理的鼠标事件会导致 Delta 异常跳变。
+        // 所以我们还是必须使用 `DisableCursor()`。
+        // 但为了防止 "按住左键就永远锁死" 的错觉，我们只在 `is_mouse_button_down` 期间 Disable。
+        // 松开时，立刻 EnableCursor() 并恢复到拖动前的位置（Raylib 底层会自动处理恢复位置）。
         @raylib.disable_cursor() 
       } else {
         @raylib.enable_cursor() // 释放鼠标

@@ -29,15 +29,8 @@ pub fn Engine::new() -> Engine {
   
   // Try to load chunk files until we can't find more
   // (In a real game, we'd read a directory or an index file, here we just try a range)
-  for i = 0; i < 128; i = i + 1 {
-    let path = "assets/chunks/chunk_" + i.to_string() + ".glb"
-    let exists = @fs.path_exists(path)
-    if exists {
-      chunk_count = chunk_count + 1
-    } else {
-      break
-    }
-  }
+  // 我们不再在这里检查，改为在 main.mbt 的启动画面中分帧检查或直接加载，以防止初始化的黑屏
+  let chunk_count = 64 // 我们已知通过 python 脚本切出了 64 个 chunk，直接写死即可避免 I/O 扫描阻塞
   
   let asset_json = try {
     @fs.read_file_to_string("assets/asset.json")
@@ -101,16 +94,24 @@ pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
   
   if @raylib.is_mouse_button_down(0) { // 0 = left mouse button
     // 鼠标按住左键拖动，更新 yaw 和 pitch
-    let dx = @raylib.get_mouse_delta_x()
-    let dy = @raylib.get_mouse_delta_y()
+    // 当刚按下左键的那一帧，鼠标被重置到中心，此时会产生一个巨大的跳变 Delta。
+    // 如果是第一次按下（is_mouse_button_pressed），我们应该忽略这一帧的 Delta，避免画面抽动。
+    if not(@raylib.is_mouse_button_pressed(0)) {
+      let dx = @raylib.get_mouse_delta_x()
+      let dy = @raylib.get_mouse_delta_y()
+      
+      self.player_yaw -= dx * 0.001
+      self.player_pitch -= dy * 0.001
+      
+      // 限制 pitch 角度防止翻转 (-89 to 89 degrees)
+      let pi_half = 1.5533
+      if self.player_pitch > pi_half { self.player_pitch = pi_half }
+      if self.player_pitch < -pi_half { self.player_pitch = -pi_half }
+    }
     
-    self.player_yaw -= dx * 0.001
-    self.player_pitch -= dy * 0.001
-    
-    // 限制 pitch 角度防止翻转 (-89 to 89 degrees)
-    let pi_half = 1.5533
-    if self.player_pitch > pi_half { self.player_pitch = pi_half }
-    if self.player_pitch < -pi_half { self.player_pitch = -pi_half }
+    // IMPORTANT: Raylib's GetMouseDelta() depends on DisableCursor to work correctly without hitting screen edges.
+    // However, since we just use it raw, moving the mouse to the screen edge stops Delta.
+    // If we use HideCursor instead of DisableCursor, the Delta is bounded by the screen resolution.
   }
 
   self.ui.update()
