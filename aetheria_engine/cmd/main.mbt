@@ -98,11 +98,10 @@ fn main {
       let tx = px - @math.sin(yaw) * @math.cos(pitch)
       let ty = py + @math.sin(pitch)
       let tz = pz - @math.cos(yaw) * @math.cos(pitch)
-      
+
       @raylib.setup_camera(px, py, pz, tx, ty, tz, 0.0, 1.0, 0.0, 45.0)
-      @raylib.update_camera(0) // custom mode, 不自己处理鼠标
-    }
-    
+    }        
+
     @raylib.begin_mode_3d_current_camera()
     
     @raylib.draw_grid(20, 1.0)
