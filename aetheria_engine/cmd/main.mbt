@@ -17,9 +17,18 @@ fn main {
     // 但在 Custom 模式下，不需要 disable。我们在启动时默认显示鼠标。
     @raylib.show_cursor()
 
-    // 加载 GLB 模型
-    @raylib.load_global_model("../aetheria_engine/assets/mock_house_3x3x3.glb")
-    @raylib.debug_global_model()
+    // 加载 GLB 模型 Chunks
+    let chunk_count = engine.get_chunk_count()
+    if chunk_count > 0 {
+      println("Loading \{chunk_count} model chunks...")
+      for i = 0; i < chunk_count; i = i + 1 {
+        let path = "../aetheria_engine/assets/chunks/chunk_\{i}.glb"
+        @raylib.load_chunk_model(i, path)
+      }
+    } else {
+      // Fallback
+      @raylib.load_global_model("../aetheria_engine/assets/mock_house_3x3x3.glb")
+    }
 
   while not(@raylib.window_should_close()) {
     // 收集输入
@@ -80,9 +89,15 @@ fn main {
     
     @raylib.draw_grid(20, 1.0)
     
-    // Draw the GLB model
-    // 缩放值根据实际 GLB 大小来决定，之前归一化会导致变形，现在用 1.0 的原始比例
-    @raylib.draw_global_model(0.0, 0.0, 0.0, 1.0)
+    // Draw the GLB model Chunks
+    if chunk_count > 0 {
+      for i = 0; i < chunk_count; i = i + 1 {
+        // Trellis 模型的坐标已经在 python 切分时保留了，缩放放大 20 倍以便漫游
+        @raylib.draw_chunk_model(i, 0.0, 0.0, 0.0, 20.0)
+      }
+    } else {
+      @raylib.draw_global_model(0.0, 0.0, 0.0, 1.0)
+    }
     
     @raylib.end_mode_3d()
     

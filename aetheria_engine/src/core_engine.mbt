@@ -18,12 +18,30 @@ pub struct Engine {
   mut player_pos : Vector3
   world : VoxelWorld
   materials : Map[Int, UVRect]
+  mut chunk_count : Int
 }
 
 pub fn Engine::new() -> Engine {
   // Load JSON data
   let mut world = VoxelWorld::new()
   let mut materials = Map::new()
+  let mut chunk_count = 0
+  
+  // Try to load chunk files until we can't find more
+  // (In a real game, we'd read a directory or an index file, here we just try a range)
+  for i = 0; i < 64; i = i + 1 {
+    let path = "assets/chunks/chunk_" + i.to_string() + ".glb"
+    let content = try {
+      @fs.read_file_to_string(path) // Just to check if it exists (although this reads the whole binary, slightly inefficient but works for a quick check)
+    } catch {
+      _ => ""
+    }
+    if content.length() > 0 {
+      chunk_count = chunk_count + 1
+    } else {
+      break
+    }
+  }
   
   let asset_json = try {
     @fs.read_file_to_string("assets/asset.json")
@@ -55,8 +73,13 @@ pub fn Engine::new() -> Engine {
     player_pitch: 0.0,
     player_pos: { x: 0.0, y: 1.0, z: 0.0 },
     world,
-    materials
+    materials,
+    chunk_count
   }
+}
+
+pub fn Engine::get_chunk_count(self: Engine) -> Int {
+  self.chunk_count
 }
 
 // target_x/y/z 用于做简单的碰撞检测

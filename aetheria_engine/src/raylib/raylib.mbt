@@ -225,6 +225,21 @@ pub fn load_global_model(path: String) -> Unit {
   load_global_model_from_buffer()
 }
 
+pub fn load_chunk_model(index: Int, path: String) -> Unit {
+  clear_text_buffer()
+  for c in path {
+    append_text_char(c.to_int())
+  }
+  load_chunk_model_from_buffer(index)
+}
+
+extern "C" fn load_chunk_model_from_buffer(index: Int) = "load_chunk_model_from_buffer"
+extern "C" fn draw_chunk_model_wrapper(index: Int, x: Double, y: Double, z: Double, scale: Double) = "draw_chunk_model_wrapper"
+
+pub fn draw_chunk_model(index: Int, x: Double, y: Double, z: Double, scale: Double) -> Unit {
+  draw_chunk_model_wrapper(index, x, y, z, scale)
+}
+
 pub fn draw_global_model(x: Double, y: Double, z: Double, scale: Double) -> Unit {
   draw_global_model_wrapper(x, y, z, scale)
 }

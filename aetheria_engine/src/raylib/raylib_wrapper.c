@@ -239,6 +239,49 @@ void EndMode3D_wrapper() {
 // Simple Model Loading (Stores globally to avoid managing pointers in Moonbit C backend for now)
 static Model global_model = { 0 };
 
+#define MAX_CHUNKS 128
+static Model chunk_models[MAX_CHUNKS] = { 0 };
+
+void load_chunk_model_from_buffer(int index) {
+    if (index < 0 || index >= MAX_CHUNKS) return;
+    
+    if (chunk_models[index].meshCount > 0) {
+        UnloadModel(chunk_models[index]);
+    }
+    chunk_models[index] = LoadModel(text_buffer);
+    
+    // Auto-center logic but keeping spatial relation
+    // Actually, Trellis chunks split by trimesh keep their original world coordinates!
+    // So we should NOT auto-center each chunk individually, otherwise they will all collapse into the origin.
+    // However, if we want to center the ENTIRE plaza, we need to apply a global offset.
+    // For now, let's just render them as-is (they will retain their relative positions).
+    // But Raylib's GLB loader sometimes ignores the transform hierarchy if it's baked into the vertices.
+    // Let's just trust the vertices are in the right place relative to each other.
+    
+    if (chunk_models[index].meshCount > 0) {
+        for (int i = 0; i < chunk_models[index].materialCount; i++) {
+            chunk_models[index].materials[i].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
+        }
+    }
+}
+
+void draw_chunk_model_wrapper(int index, double x, double y, double z, double scale) {
+    if (index < 0 || index >= MAX_CHUNKS) return;
+    if (chunk_models[index].meshCount == 0) return;
+    
+    rlDisableBackfaceCulling();
+    
+    float finalScale = (float)scale;
+    Vector3 position = { (float)x, (float)y, (float)z };
+    Vector3 rotationAxis = { 1.0f, 0.0f, 0.0f };
+    float rotationAngle = 0.0f;
+    Vector3 scaleVec = { finalScale, finalScale, finalScale };
+    
+    DrawModelEx(chunk_models[index], position, rotationAxis, rotationAngle, scaleVec, WHITE);
+    
+    rlEnableBackfaceCulling();
+}
+
 #include <stdio.h>
 
 void debug_global_model_wrapper() {
