@@ -85,8 +85,8 @@ pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
     let dx = @raylib.get_mouse_delta_x()
     let dy = @raylib.get_mouse_delta_y()
     
-    self.player_yaw -= dx * 0.003
-    self.player_pitch -= dy * 0.003
+    self.player_yaw -= dx * 0.001
+    self.player_pitch -= dy * 0.001
     
     // 限制 pitch 角度防止翻转 (-89 to 89 degrees)
     let pi_half = 1.5533

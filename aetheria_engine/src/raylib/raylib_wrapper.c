@@ -251,6 +251,40 @@ void debug_global_model_wrapper() {
             bounds.max.x, bounds.max.y, bounds.max.z);
         printf("[DEBUG] Mesh 0 vertices: %d, triangles: %d\n", 
             global_model.meshes[0].vertexCount, global_model.meshes[0].triangleCount);
+            
+        // 打印前 5 个顶点和纹理坐标看看是否有问题
+        if (global_model.meshes[0].vertices != NULL) {
+            for (int i = 0; i < 5 && i < global_model.meshes[0].vertexCount; i++) {
+                printf("[DEBUG] Vertex %d: x=%.2f, y=%.2f, z=%.2f\n", 
+                    i, 
+                    global_model.meshes[0].vertices[i*3],
+                    global_model.meshes[0].vertices[i*3+1],
+                    global_model.meshes[0].vertices[i*3+2]);
+            }
+        }
+        if (global_model.meshes[0].texcoords != NULL) {
+            for (int i = 0; i < 5 && i < global_model.meshes[0].vertexCount; i++) {
+                printf("[DEBUG] TexCoord %d: u=%.2f, v=%.2f\n", 
+                    i, 
+                    global_model.meshes[0].texcoords[i*2],
+                    global_model.meshes[0].texcoords[i*2+1]);
+            }
+        } else {
+            printf("[DEBUG] Mesh has NO texture coordinates.\n");
+        }
+        
+        if (global_model.meshes[0].normals != NULL) {
+            printf("[DEBUG] Mesh has normals.\n");
+        } else {
+            printf("[DEBUG] Mesh has NO normals.\n");
+        }
+        
+        if (global_model.meshes[0].colors != NULL) {
+            printf("[DEBUG] Mesh has vertex colors.\n");
+        } else {
+            printf("[DEBUG] Mesh has NO vertex colors.\n");
+        }
+        
     } else {
         printf("[DEBUG] No model loaded.\n");
     }
@@ -261,23 +295,23 @@ void load_global_model_from_buffer() {
     }
     global_model = LoadModel(text_buffer);
     
-    // Check if the model uses vertex colors and doesn't have a material texture.
-    // If so, we need to explicitly tell the material to use vertex colors.
+    // Auto-center the mesh but do not scale it
     if (global_model.meshCount > 0) {
-        // By default, raylib sets material map to diffuse texture. 
-        // If there's no texture, but there are vertex colors, we should just use white texture.
-        // Actually, raylib does this automatically if mesh.colors is present.
-        
         BoundingBox bounds = GetMeshBoundingBox(global_model.meshes[0]);
-        // Shift model meshes to center
         Vector3 center = {
             (bounds.min.x + bounds.max.x) / 2.0f,
-            (bounds.min.y + bounds.max.y) / 2.0f,
+            bounds.min.y, // Keep the floor at y=0, rather than centering on y axis
             (bounds.min.z + bounds.max.z) / 2.0f
         };
         
         Matrix translation = MatrixTranslate(-center.x, -center.y, -center.z);
         global_model.transform = translation;
+        
+        // Raylib usually handles vertex colors natively if texture is absent, 
+        // but we explicitly set the material color to WHITE to ensure it doesn't get tinted.
+        for (int i = 0; i < global_model.materialCount; i++) {
+            global_model.materials[i].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
+        }
     }
 }
 
@@ -287,25 +321,22 @@ void draw_global_model_wrapper(double x, double y, double z, double scale) {
     
     // Compute scale
     float finalScale = (float)scale;
-    if (global_model.meshCount > 0) {
-        BoundingBox bounds = GetMeshBoundingBox(global_model.meshes[0]);
-        float sizeX = bounds.max.x - bounds.min.x;
-        float sizeY = bounds.max.y - bounds.min.y;
-        float sizeZ = bounds.max.z - bounds.min.z;
-        float maxSize = sizeX > sizeY ? (sizeX > sizeZ ? sizeX : sizeZ) : (sizeY > sizeZ ? sizeY : sizeZ);
-        if (maxSize > 0.0001f) {
-            // For a 512 house, scaling it to 10 might make it too small or big.
-            // Since the user said it's a 512 house plaza, let's just let the user provide the raw scale multiplier
-            // and we do NOT auto-normalize it to 10.0 here, which could be the reason for distortion if bounds calculation is wrong.
-            // Let's just use the raw scale.
-        }
-    }
     
     // Default Raylib expects models to have Y-up.
+    // Trellis output bounds are: min(-0.50, -0.30, -0.50) max(0.50, 0.30, 0.50)
+    // This is already a normalized -0.5 to 0.5 bounding box!
+    // But it's very small. If we draw it with scale 1.0, it will be 1x1x1 unit.
+    // If the user's camera is at Y=10.0 and looking at 0,0,0, a 1x1x1 model will be tiny.
+    // Let's scale it by the user's scale parameter directly.
+    // If the user passes scale=1.0, it stays 1.0. If the user passes scale=10.0, it becomes 10.0.
+    
     Vector3 position = { (float)x, (float)y, (float)z };
     Vector3 rotationAxis = { 1.0f, 0.0f, 0.0f };
     float rotationAngle = 0.0f; // No rotation by default
     Vector3 scaleVec = { finalScale, finalScale, finalScale };
+    
+    // Trellis GLB models might not have a material assigned properly in raylib.
+    // We already set this in load_global_model_from_buffer, so no need to do it here every frame.
     
     DrawModelEx(global_model, position, rotationAxis, rotationAngle, scaleVec, WHITE);
     
