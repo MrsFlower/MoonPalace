@@ -13,7 +13,9 @@ pub struct Engine {
   mut state : GameState
   mut camera_mode : Int
   ui : UIManager
-  player_pos : Vector3
+  mut player_yaw : Double
+  mut player_pitch : Double
+  mut player_pos : Vector3
   world : VoxelWorld
   materials : Map[Int, UVRect]
 }
@@ -49,6 +51,8 @@ pub fn Engine::new() -> Engine {
     state: Roam, // 跳过 Init 和 Loading，直接进入 Roam 模式测试控制
     camera_mode: 0, // 0 = default (custom), 1 = free
     ui: UIManager::new(),
+    player_yaw: 0.0,
+    player_pitch: 0.0,
     player_pos: { x: 0.0, y: 1.0, z: 0.0 },
     world,
     materials
@@ -61,65 +65,69 @@ pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
   if @raylib.is_mouse_button_pressed(@raylib.mouse_button_right) { // 1 = right mouse button
     if self.camera_mode == 0 {
       self.camera_mode = 1 // Enable Free Camera
+      @raylib.disable_cursor()
     } else {
       self.camera_mode = 0 // Disable Free Camera
+      @raylib.enable_cursor()
     }
   }
 
-  // If in free camera mode, don't update player position
+  // If in free camera mode, don't update player position with WASD
   if self.camera_mode == 1 {
-    // 摄像机被 Raylib 接管了。我们也可以选择将玩家的位置同步为摄像机的位置
     let (cx, cy, cz) = @raylib.get_camera_position()
-    self.player_pos.x = cx
-    self.player_pos.y = cy - 0.5 // Adjust for camera height
-    self.player_pos.z = cz
+    self.player_pos = { x: cx, y: cy - 0.5, z: cz } // Adjust for camera height
     self.ui.update()
     return
   }
   
   if @raylib.is_mouse_button_down(@raylib.mouse_button_left) { // 0 = left mouse button
-    // If we are holding left click in Roam mode, do not process WASD as movement,
-    // let it just be camera rotation (Raylib handles WASD internally in FREE mode).
-    // But actually, Raylib's FREE mode might move the camera position.
-    // If we just want to look around, we should skip our custom movement.
-    let (cx, cy, cz) = @raylib.get_camera_position()
-    self.player_pos.x = cx
-    self.player_pos.y = cy - 0.5
-    self.player_pos.z = cz
-    self.ui.update()
-    return
+    // 鼠标按住左键拖动，更新 yaw 和 pitch
+    let dx = @raylib.get_mouse_delta_x()
+    let dy = @raylib.get_mouse_delta_y()
+    
+    self.player_yaw -= dx * 0.003
+    self.player_pitch -= dy * 0.003
+    
+    // 限制 pitch 角度防止翻转 (-89 to 89 degrees)
+    let pi_half = 1.5533
+    if self.player_pitch > pi_half { self.player_pitch = pi_half }
+    if self.player_pitch < -pi_half { self.player_pitch = -pi_half }
   }
 
   self.ui.update()
   
   // 仅在漫游状态下允许移动
-  if self.state == Roam {
-    // 简单的速度
+  if self.state == Roam && self.camera_mode == 0 {
     let speed = 0.1
-    let next_x = self.player_pos.x + input_x * speed
-    let next_z = self.player_pos.z + input_z * speed
+    
+    // 计算前向向量和右向向量 (在 XZ 平面上)
+    // 根据 yaw 角度计算 (yaw=0 对应 -Z 方向)
+    let forward_x = -@math.sin(self.player_yaw)
+    let forward_z = -@math.cos(self.player_yaw)
+    
+    let right_x = @math.cos(self.player_yaw)
+    let right_z = -@math.sin(self.player_yaw)
+    
+    // 组合输入
+    let move_x = (right_x * input_x + forward_x * input_z) * speed
+    let move_z = (right_z * input_x + forward_z * input_z) * speed
+    
+    let next_x = self.player_pos.x + move_x
+    let next_z = self.player_pos.z + move_z
 
     // 碰撞检测
     if self.world.check_collision(next_x, self.player_pos.y, next_z) {
-      // 发生碰撞，不更新位置
-      // 如果发生碰撞且目标材质是特殊的（例如我们模拟一个宝箱在 mat_id = 3），可以触发对话
-      // 这里做一个简化的假设：假设所有方块都是固体，只有靠近特定坐标才会弹窗
       if (next_x - 6.0)*(next_x - 6.0) + (next_z - 0.0)*(next_z - 0.0) < 1.0 {
         self.state = Dialog
         self.ui.show_dialog("You bumped into a special voxel!")
       }
     } else {
-      // 未发生碰撞，更新位置
-      self.player_pos.x = next_x
-      self.player_pos.z = next_z
+      self.player_pos = { x: next_x, y: self.player_pos.y, z: next_z }
     }
   }
 
   // 处于对话状态时，检查输入以恢复漫游
   if self.state == Dialog {
-     // 用特殊的标记来让外部告诉引擎 "关闭对话框" 
-     // 简单起见：如果按下反向键或者其他动作，这里我们假设输入不为 0 时尝试跳出
-     // 实际中可能需要专门的 'action' 键
   }
 }
 
@@ -128,19 +136,19 @@ pub fn Engine::dismiss_dialog(self: Engine) -> Unit {
     self.state = Roam
     self.ui.hide_dialog()
     // 稍微把玩家推开一点防止死锁
-    self.player_pos.x = self.player_pos.x - 0.5
+    self.player_pos = { x: self.player_pos.x - 0.5, y: self.player_pos.y, z: self.player_pos.z }
   }
 }
 
 pub fn Engine::set_player_pos(self: Engine, x: Double, y: Double, z: Double) -> Unit {
-  self.player_pos.x = x
-  self.player_pos.y = y
-  self.player_pos.z = z
+  self.player_pos = { x, y, z }
 }
 
 pub fn Engine::get_player_pos_x(self: Engine) -> Double { self.player_pos.x }
 pub fn Engine::get_player_pos_y(self: Engine) -> Double { self.player_pos.y }
 pub fn Engine::get_player_pos_z(self: Engine) -> Double { self.player_pos.z }
+pub fn Engine::get_player_yaw(self: Engine) -> Double { self.player_yaw }
+pub fn Engine::get_player_pitch(self: Engine) -> Double { self.player_pitch }
 
 pub fn Engine::get_camera_mode(self: Engine) -> Int {
   self.camera_mode

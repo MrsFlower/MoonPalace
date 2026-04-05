@@ -25,6 +25,23 @@ pub fn is_mouse_button_pressed(button: Int) -> Bool {
   is_mouse_button_pressed_wrapper(button) != 0
 }
 
+extern "C" fn get_mouse_delta_x_wrapper() -> Double = "GetMouseDeltaX_wrapper"
+extern "C" fn get_mouse_delta_y_wrapper() -> Double = "GetMouseDeltaY_wrapper"
+
+pub fn get_mouse_delta_y() -> Double {
+  get_mouse_delta_y_wrapper()
+}
+
+pub fn get_mouse_delta_x() -> Double {
+  get_mouse_delta_x_wrapper()
+}
+
+pub fn get_mouse_wheel_move() -> Double {
+  get_mouse_wheel_move_wrapper()
+}
+
+extern "C" fn get_mouse_wheel_move_wrapper() -> Double = "get_mouse_wheel_move_wrapper"
+
 // 安全传递字符串的 C-FFI 辅助函数
 extern "C" fn clear_text_buffer() = "clear_text_buffer"
 extern "C" fn append_text_char(c: Int) = "append_text_char"
@@ -171,6 +188,12 @@ extern "C" fn set_camera_position_wrapper(x: Double, y: Double, z: Double) = "se
 
 pub fn update_camera(mode: Int) -> Unit {
   update_camera_wrapper(mode)
+}
+
+extern "C" fn update_camera_pro_wrapper(movement_x: Double, movement_y: Double, movement_z: Double, rotation_x: Double, rotation_y: Double, rotation_z: Double, zoom: Double) = "UpdateCameraPro_wrapper"
+
+pub fn update_camera_pro(movement_x: Double, movement_y: Double, movement_z: Double, rotation_x: Double, rotation_y: Double, rotation_z: Double, zoom: Double) -> Unit {
+  update_camera_pro_wrapper(movement_x, movement_y, movement_z, rotation_x, rotation_y, rotation_z, zoom)
 }
 
 pub fn begin_mode_3d_current_camera() -> Unit {

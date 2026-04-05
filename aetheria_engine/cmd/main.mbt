@@ -48,21 +48,30 @@ fn main {
     // 自定义按住左键拖动旋转视角 (Camera Custom)
     if current_cam_mode == 1 {
       // Free Camera 模式下 Raylib 接管，允许鼠标乱飞
-      @raylib.update_camera(@raylib.camera_free) // 1 = camera free
+      @raylib.update_camera(1) // 1 = camera free
     } else {
       // Locked Mode - 只有按住鼠标左键时才允许转动视角
-      if @raylib.is_mouse_button_down(@raylib.mouse_button_left) { // 0 = left mouse button
+      if @raylib.is_mouse_button_down(0) { // 0 = left mouse button
         @raylib.disable_cursor() // 隐藏并锁定鼠标
-        @raylib.update_camera(@raylib.camera_free) // 1 = camera free
-        // 从摄像机读取新位置，同步给引擎
-        let (cx, cy, cz) = @raylib.get_camera_position()
-        engine.set_player_pos(cx, cy, cz)
       } else {
         @raylib.enable_cursor() // 释放鼠标
-        // 手动把摄像机位置放到引擎的坐标，以覆盖内部的惯性或残留
-        @raylib.set_camera_position(engine.get_player_pos_x(), engine.get_player_pos_y() + 0.5, engine.get_player_pos_z())
-        @raylib.update_camera(@raylib.camera_custom) // 0 = custom, 不处理鼠标输入
       }
+      
+      // 我们自己计算相机的 target
+      let px = engine.get_player_pos_x()
+      let py = engine.get_player_pos_y() + 0.5 // 摄像机在角色头部
+      let pz = engine.get_player_pos_z()
+      
+      let yaw = engine.get_player_yaw()
+      let pitch = engine.get_player_pitch()
+      
+      // 计算视线前方
+      let tx = px - @math.sin(yaw) * @math.cos(pitch)
+      let ty = py + @math.sin(pitch)
+      let tz = pz - @math.cos(yaw) * @math.cos(pitch)
+      
+      @raylib.setup_camera(px, py, pz, tx, ty, tz, 0.0, 1.0, 0.0, 45.0)
+      @raylib.update_camera(0) // custom mode, 不自己处理鼠标
     }
     
     @raylib.begin_mode_3d_current_camera()

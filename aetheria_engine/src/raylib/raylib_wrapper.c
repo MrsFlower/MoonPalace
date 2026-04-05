@@ -147,6 +147,18 @@ int32_t IsMouseButtonPressed_wrapper(int32_t button) {
     return IsMouseButtonPressed(button) ? 1 : 0;
 }
 
+double GetMouseDeltaX_wrapper() {
+    return (double)GetMouseDelta().x;
+}
+
+double GetMouseDeltaY_wrapper() {
+    return (double)GetMouseDelta().y;
+}
+
+double get_mouse_wheel_move_wrapper() {
+    return (double)GetMouseWheelMove();
+}
+
 // Camera and Model Wrappers
 static Camera3D current_camera = { 0 };
 
@@ -171,6 +183,12 @@ void EnableCursor_wrapper() {
 
 void update_camera_wrapper(int32_t mode) {
     UpdateCamera(&current_camera, mode);
+}
+
+void UpdateCameraPro_wrapper(double movement_x, double movement_y, double movement_z, double rotation_x, double rotation_y, double rotation_z, double zoom) {
+    Vector3 movement = { (float)movement_x, (float)movement_y, (float)movement_z };
+    Vector3 rotation = { (float)rotation_x, (float)rotation_y, (float)rotation_z };
+    UpdateCameraPro(&current_camera, movement, rotation, (float)zoom);
 }
 
 double get_camera_position_x_wrapper() {
@@ -228,35 +246,50 @@ void load_global_model_from_buffer() {
             (bounds.min.y + bounds.max.y) / 2.0f,
             (bounds.min.z + bounds.max.z) / 2.0f
         };
-        // Compute max dimension to scale it down to roughly 1.0 unit size
+        
         float sizeX = bounds.max.x - bounds.min.x;
         float sizeY = bounds.max.y - bounds.min.y;
         float sizeZ = bounds.max.z - bounds.min.z;
         float maxSize = sizeX > sizeY ? (sizeX > sizeZ ? sizeX : sizeZ) : (sizeY > sizeZ ? sizeY : sizeZ);
         
-        // Apply transform matrix
+        // Instead of scaling matrix which might break normals, let's just use it in DrawModelEx.
+        // We only translate here.
         Matrix translation = MatrixTranslate(-center.x, -center.y, -center.z);
-        float scale = 1.0f;
-        if (maxSize > 0.0001f) {
-            scale = 10.0f / maxSize; // scale to 10 units
-        }
-        Matrix scaling = MatrixScale(scale, scale, scale);
+        global_model.transform = translation;
         
-        // Let's remove the X rotation here because we're applying it in DrawModelEx now
-        // global_model.transform = MatrixMultiply(MatrixMultiply(translation, scaling), rotation);
-        global_model.transform = MatrixMultiply(translation, scaling);
+        // Save the scale factor globally if we want to apply it in draw, 
+        // but for now let's just let the user scale it in the draw call
+        // Actually, Trellis outputs are sometimes very small, like 0.05. 
+        // We will scale by 1.0 / maxSize during draw.
     }
 }
 
 void draw_global_model_wrapper(double x, double y, double z, double scale) {
-    // Trellis GLB models typically use Y-up but flipped, or Z-up.
-    // Let's draw it without modifying rotationAngle initially.
+    // 渲染 Trellis GLB 时，模型有时候网格混乱是因为背面剔除(Backface Culling)
+    // 但 Trellis 经常生成内部多边形，或者法线有问题。我们尝试禁用剔除看看。
+    rlDisableBackfaceCulling();
+    
+    // Compute scale
+    float finalScale = (float)scale;
+    if (global_model.meshCount > 0) {
+        BoundingBox bounds = GetMeshBoundingBox(global_model.meshes[0]);
+        float sizeX = bounds.max.x - bounds.min.x;
+        float sizeY = bounds.max.y - bounds.min.y;
+        float sizeZ = bounds.max.z - bounds.min.z;
+        float maxSize = sizeX > sizeY ? (sizeX > sizeZ ? sizeX : sizeZ) : (sizeY > sizeZ ? sizeY : sizeZ);
+        if (maxSize > 0.0001f) {
+            finalScale *= (1.0f / maxSize) * 10.0f; // normalize to size 10.0
+        }
+    }
+    
     Vector3 position = { (float)x, (float)y, (float)z };
     Vector3 rotationAxis = { 1.0f, 0.0f, 0.0f }; // rotate around X
-    float rotationAngle = -90.0f; // GLB models usually need -90 on X to stand up
-    Vector3 scaleVec = { (float)scale, (float)scale, (float)scale };
+    float rotationAngle = -90.0f; // 大部分 GLB 是 Y up
+    Vector3 scaleVec = { finalScale, finalScale, finalScale };
     
     DrawModelEx(global_model, position, rotationAxis, rotationAngle, scaleVec, WHITE);
+    
+    rlEnableBackfaceCulling();
 }
 
 void DrawCube_wrapper(double x, double y, double z, double w, double h, double l, int32_t r, int32_t g, int32_t b, int32_t a) {
