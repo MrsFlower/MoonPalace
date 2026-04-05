@@ -21,24 +21,24 @@ fn main {
     let chunk_count = engine.get_chunk_count()
 
   while not(@raylib.window_should_close()) {
-    // 渐进式加载模型 Chunks (每帧加载一批，避免画面卡死且提高 CPU 利用率)
+    // 渐进式加载模型 Chunks
     if current_chunk_to_load < chunk_count {
-      // 每次最多加载 4 个区块，加快速度
-      let batch_size = 4
-      let limit = if current_chunk_to_load + batch_size > chunk_count { chunk_count } else { current_chunk_to_load + batch_size }
+      // 经过验证，加载大模型（单个十几MB）时，解析和显存上传操作极为昂贵。
+      // 一帧加载4个会导致该帧耗时过长，进而引发操作系统的“未响应”阻塞或界面卡顿抽搐。
+      // 为了极致平滑的体验，我们退回一次只加载一个。
+      let path = "../aetheria_engine/assets/chunks/chunk_\{current_chunk_to_load}.glb"
+      @raylib.load_chunk_model(current_chunk_to_load, path)
+      current_chunk_to_load = current_chunk_to_load + 1
       
-      for i = current_chunk_to_load; i < limit; i = i + 1 {
-        let path = "../aetheria_engine/assets/chunks/chunk_\{i}.glb"
-        @raylib.load_chunk_model(i, path)
-      }
-      current_chunk_to_load = limit
-      
-      // 如果还没加载完，先画个 Loading 界面
+      // 画一个平滑的 Loading 界面，由于只加载了一个，界面更新率能维持在几十帧以上
       @raylib.begin_drawing()
       @raylib.clear_background(20, 20, 20, 255)
-      @raylib.draw_text("Loading Model Chunks...", 300, 250, 20, 200, 200, 200, 255)
-      let progress = "Progress: \{current_chunk_to_load} / \{chunk_count}"
-      @raylib.draw_text(progress, 320, 300, 20, 100, 255, 100, 255)
+      
+      let percentage = current_chunk_to_load * 100 / chunk_count
+      @raylib.draw_text("Loading Aetheria World...", 280, 250, 20, 200, 200, 200, 255)
+      let progress = "Progress: \{percentage}% (\{current_chunk_to_load} / \{chunk_count})"
+      @raylib.draw_text(progress, 300, 300, 20, 100, 255, 100, 255)
+      
       @raylib.end_drawing()
       continue
     }

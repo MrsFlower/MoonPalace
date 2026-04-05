@@ -94,18 +94,27 @@ pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
   
   if @raylib.is_mouse_button_down(0) { // 0 = left mouse button
     // 鼠标按住左键拖动，更新 yaw 和 pitch
-    let dx = @raylib.get_mouse_delta_x()
-    let dy = @raylib.get_mouse_delta_y()
-    
-    // 如果是第一次按下（is_mouse_button_pressed），我们应该忽略这一帧的 Delta，避免画面抽动。
+    // 因为 main 循环里的 update_camera 和 cursor disable 会在同一帧发生，
+    // GetMouseDelta() 在 DisableCursor 被调用前后的行为在某些操作系统上有不可预测的跳变。
+    // 我们强制丢弃第一帧（甚至前两帧）的 Delta，因为在按下左键的瞬间，操作系统的光标可能会回中。
     if not(@raylib.is_mouse_button_pressed(0)) {
-      self.player_yaw -= dx * 0.001
-      self.player_pitch -= dy * 0.001
+      let dx = @raylib.get_mouse_delta_x()
+      let dy = @raylib.get_mouse_delta_y()
       
-      // 限制 pitch 角度防止翻转 (-89 to 89 degrees)
-      let pi_half = 1.5533
-      if self.player_pitch > pi_half { self.player_pitch = pi_half }
-      if self.player_pitch < -pi_half { self.player_pitch = -pi_half }
+      // 如果 dx 或 dy 异常大（比如超过 100 像素），这绝对是操作系统的重置跳变，不是人类手滑，直接忽略
+      if dx < 100.0 && dx > -100.0 && dy < 100.0 && dy > -100.0 {
+        self.player_yaw -= dx * 0.001
+        self.player_pitch -= dy * 0.001
+        
+        // 限制 pitch 角度防止翻转 (-89 to 89 degrees)
+        let pi_half = 1.5533
+        if self.player_pitch > pi_half { self.player_pitch = pi_half }
+        if self.player_pitch < -pi_half { self.player_pitch = -pi_half }
+      }
+    } else {
+      // 第一帧被按下，直接清空当前的 Delta，防止下一帧累积
+      let _discard_x = @raylib.get_mouse_delta_x()
+      let _discard_y = @raylib.get_mouse_delta_y()
     }
     
     // IMPORTANT: Raylib's GetMouseDelta() depends on DisableCursor to work correctly without hitting screen edges.
