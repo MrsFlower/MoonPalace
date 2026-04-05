@@ -3,6 +3,7 @@
 #include <raymath.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 // Text buffer to safely receive string data from Moonbit
@@ -293,8 +294,6 @@ void draw_chunk_model_wrapper(int index, double x, double y, double z, double sc
     
     rlEnableBackfaceCulling();
 }
-
-#include <stdio.h>
 
 void debug_global_model_wrapper() {
     printf("[DEBUG] debug_global_model_wrapper called.\n");
