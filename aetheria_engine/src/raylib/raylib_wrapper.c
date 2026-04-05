@@ -174,11 +174,15 @@ void setup_camera(double cam_px, double cam_py, double cam_pz,
 }
 
 void DisableCursor_wrapper() {
-    DisableCursor();
+    if (!IsCursorHidden()) {
+        DisableCursor();
+    }
 }
 
 void EnableCursor_wrapper() {
-    EnableCursor();
+    if (IsCursorHidden()) {
+        EnableCursor();
+    }
 }
 
 void HideCursor_wrapper() {
@@ -251,14 +255,17 @@ void load_chunk_model_from_buffer(int index) {
     chunk_models[index] = LoadModel(text_buffer);
     
     // Auto-center logic but keeping spatial relation
-    // Actually, Trellis chunks split by trimesh keep their original world coordinates!
-    // So we should NOT auto-center each chunk individually, otherwise they will all collapse into the origin.
-    // However, if we want to center the ENTIRE plaza, we need to apply a global offset.
-    // For now, let's just render them as-is (they will retain their relative positions).
-    // But Raylib's GLB loader sometimes ignores the transform hierarchy if it's baked into the vertices.
-    // Let's just trust the vertices are in the right place relative to each other.
-    
+    // Trellis chunks are originally exported by trimesh which usually retains absolute positions.
+    // However, some GLB exporters might bake the offset into the vertices and some into the nodes.
+    // Let's completely remove ANY translation matrix manipulation to ensure we render it EXACTLY as it is in the file.
+    // Let's print out the bounds of each chunk to debug if they are all overlapping or flattened.
     if (chunk_models[index].meshCount > 0) {
+        BoundingBox bounds = GetMeshBoundingBox(chunk_models[index].meshes[0]);
+        printf("[DEBUG] Chunk %d loaded. Vertices: %d, Bounds: min(%.2f, %.2f, %.2f) max(%.2f, %.2f, %.2f)\n",
+               index, chunk_models[index].meshes[0].vertexCount,
+               bounds.min.x, bounds.min.y, bounds.min.z,
+               bounds.max.x, bounds.max.y, bounds.max.z);
+               
         for (int i = 0; i < chunk_models[index].materialCount; i++) {
             chunk_models[index].materials[i].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
         }
@@ -273,8 +280,13 @@ void draw_chunk_model_wrapper(int index, double x, double y, double z, double sc
     
     float finalScale = (float)scale;
     Vector3 position = { (float)x, (float)y, (float)z };
+    
+    // Apply standard fix for Z-up GLB models in Raylib to make them stand up correctly.
+    // Also, when models are exported in Python using trimesh, they often lose the "transform node" 
+    // that GLTF provides for the Y-up / Z-up conversion. We apply it manually here.
     Vector3 rotationAxis = { 1.0f, 0.0f, 0.0f };
-    float rotationAngle = 0.0f;
+    float rotationAngle = -90.0f; // This rotates the flat model up.
+    
     Vector3 scaleVec = { finalScale, finalScale, finalScale };
     
     DrawModelEx(chunk_models[index], position, rotationAxis, rotationAngle, scaleVec, WHITE);

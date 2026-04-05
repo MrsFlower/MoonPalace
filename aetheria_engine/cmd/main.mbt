@@ -36,8 +36,8 @@ fn main {
     let mut input_z = 0.0
     
     if engine.state == Roam {
-      if @raylib.is_key_down(@raylib.key_w) { input_z = -1.0 }
-      if @raylib.is_key_down(@raylib.key_s) { input_z = 1.0 }
+      if @raylib.is_key_down(@raylib.key_w) { input_z = 1.0 }
+      if @raylib.is_key_down(@raylib.key_s) { input_z = -1.0 }
       if @raylib.is_key_down(@raylib.key_a) { input_x = -1.0 }
       if @raylib.is_key_down(@raylib.key_d) { input_x = 1.0 }
     } else if engine.state == Dialog {
@@ -62,7 +62,14 @@ fn main {
     } else {
       // Locked Mode - 只有按住鼠标左键时才允许转动视角
       if @raylib.is_mouse_button_down(0) { // 0 = left mouse button
-        // 在按住左键时，我们仅仅是隐藏并锁定鼠标，这样我们能获取 delta_x/y
+        // 之前使用 disable_cursor 会导致鼠标被锁死在中心。我们用 hide_cursor。
+        // 但 Raylib 的 camera_custom 有可能不会处理鼠标 delta，我们其实也不用它处理，我们在 core_engine.mbt 里面处理了
+        // 问题在于，如果没有禁用 cursor，鼠标可能移出窗口外。
+        // 但是使用 disable_cursor 会每帧把鼠标移回中心（这是操作系统的行为）。
+        // 其实这是正常的 FPS 游戏行为：鼠标锁定在中心，只获取 delta。
+        // 问题是如果松开鼠标，我们要把鼠标放回原来的地方？Raylib的 DisableCursor 会记住原来位置。
+        // 如果每次 down 都 disable，每次 up 都 enable，这可能会导致抖动。
+        // 我们只在状态发生改变的那一帧调用 disable/enable。
         @raylib.disable_cursor() 
       } else {
         @raylib.enable_cursor() // 释放鼠标
