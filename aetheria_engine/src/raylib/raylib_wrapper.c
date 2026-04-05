@@ -282,12 +282,11 @@ void draw_chunk_model_wrapper(int index, double x, double y, double z, double sc
     float finalScale = (float)scale;
     Vector3 position = { (float)x, (float)y, (float)z };
     
-    // Apply standard fix for Z-up GLB models in Raylib to make them stand up correctly.
-    // Also, when models are exported in Python using trimesh, they often lose the "transform node" 
-    // that GLTF provides for the Y-up / Z-up conversion. We apply it manually here.
+    // Removed the -90 degree rotation on the X-axis because the plaza was standing vertically like a wall.
+    // Now it lies flat correctly.
     Vector3 rotationAxis = { 1.0f, 0.0f, 0.0f };
-    float rotationAngle = -90.0f; // This rotates the flat model up.
-    
+    float rotationAngle = 0.0f; 
+
     Vector3 scaleVec = { finalScale, finalScale, finalScale };
     
     DrawModelEx(chunk_models[index], position, rotationAxis, rotationAngle, scaleVec, WHITE);

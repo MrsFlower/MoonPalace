@@ -23,10 +23,9 @@ fn main {
   while not(@raylib.window_should_close()) {
     // 渐进式加载模型 Chunks
     if current_chunk_to_load < chunk_count {
-      // 经过验证，加载大模型（单个十几MB）时，解析和显存上传操作极为昂贵。
-      // 一帧加载4个会导致该帧耗时过长，进而引发操作系统的“未响应”阻塞或界面卡顿抽搐。
-      // 为了极致平滑的体验，我们退回一次只加载一个。
-      let path = "../aetheria_engine/assets/chunks/chunk_\{current_chunk_to_load}.glb"
+      // 现在只有一个文件 optimized_plaza.glb，它包含 64 个 sub-mesh
+      // 加载它只需 1 秒左右，不再有 64 个重复贴图引发的性能灾难。
+      let path = "../aetheria_engine/assets/optimized_plaza.glb"
       @raylib.load_chunk_model(current_chunk_to_load, path)
       current_chunk_to_load = current_chunk_to_load + 1
       

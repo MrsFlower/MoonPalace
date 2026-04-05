@@ -25,12 +25,12 @@ pub fn Engine::new() -> Engine {
   // Load JSON data
   let mut world = VoxelWorld::new()
   let mut materials = Map::new()
-  let mut chunk_count = 0
   
   // Try to load chunk files until we can't find more
   // (In a real game, we'd read a directory or an index file, here we just try a range)
-  // 我们不再在这里检查，改为在 main.mbt 的启动画面中分帧检查或直接加载，以防止初始化的黑屏
-  let chunk_count = 64 // 我们已知通过 python 脚本切出了 64 个 chunk，直接写死即可避免 I/O 扫描阻塞
+  // 我们已经通过 python 脚本将 64 个 chunk 合并为了 1 个包含多个 mesh 的单一优化 glb 文件。
+  // 这大大加快了读取和上传显存的速度。
+  let chunk_count = 1
   
   let asset_json = try {
     @fs.read_file_to_string("assets/asset.json")

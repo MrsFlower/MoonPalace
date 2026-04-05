@@ -2,7 +2,8 @@
   "is_main": true,
   "import": [
     "aetheria/engine/src",
-    "aetheria/engine/src/raylib"
+    "aetheria/engine/src/raylib",
+    "moonbitlang/core/math"
   ],
   "link": {
     "native": {
