@@ -94,12 +94,11 @@ pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
   
   if @raylib.is_mouse_button_down(0) { // 0 = left mouse button
     // 鼠标按住左键拖动，更新 yaw 和 pitch
-    // 当刚按下左键的那一帧，鼠标被重置到中心，此时会产生一个巨大的跳变 Delta。
+    let dx = @raylib.get_mouse_delta_x()
+    let dy = @raylib.get_mouse_delta_y()
+    
     // 如果是第一次按下（is_mouse_button_pressed），我们应该忽略这一帧的 Delta，避免画面抽动。
     if not(@raylib.is_mouse_button_pressed(0)) {
-      let dx = @raylib.get_mouse_delta_x()
-      let dy = @raylib.get_mouse_delta_y()
-      
       self.player_yaw -= dx * 0.001
       self.player_pitch -= dy * 0.001
       
@@ -112,6 +111,11 @@ pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
     // IMPORTANT: Raylib's GetMouseDelta() depends on DisableCursor to work correctly without hitting screen edges.
     // However, since we just use it raw, moving the mouse to the screen edge stops Delta.
     // If we use HideCursor instead of DisableCursor, the Delta is bounded by the screen resolution.
+  } else {
+    // 【关键修复】：如果鼠标没有被按下，我们必须消耗掉 (清空) 这一帧的鼠标增量，
+    // 否则操作系统的光标移动累积的 Delta 会在下一次按下左键或者引擎内部其他地方被意外读取，导致瞬间的跳动/抽动。
+    let _discard_x = @raylib.get_mouse_delta_x()
+    let _discard_y = @raylib.get_mouse_delta_y()
   }
 
   self.ui.update()

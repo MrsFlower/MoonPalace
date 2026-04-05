@@ -21,11 +21,17 @@ fn main {
     let chunk_count = engine.get_chunk_count()
 
   while not(@raylib.window_should_close()) {
-    // 渐进式加载模型 Chunks (每帧加载一个，避免画面卡死未响应)
+    // 渐进式加载模型 Chunks (每帧加载一批，避免画面卡死且提高 CPU 利用率)
     if current_chunk_to_load < chunk_count {
-      let path = "../aetheria_engine/assets/chunks/chunk_\{current_chunk_to_load}.glb"
-      @raylib.load_chunk_model(current_chunk_to_load, path)
-      current_chunk_to_load = current_chunk_to_load + 1
+      // 每次最多加载 4 个区块，加快速度
+      let batch_size = 4
+      let limit = if current_chunk_to_load + batch_size > chunk_count { chunk_count } else { current_chunk_to_load + batch_size }
+      
+      for i = current_chunk_to_load; i < limit; i = i + 1 {
+        let path = "../aetheria_engine/assets/chunks/chunk_\{i}.glb"
+        @raylib.load_chunk_model(i, path)
+      }
+      current_chunk_to_load = limit
       
       // 如果还没加载完，先画个 Loading 界面
       @raylib.begin_drawing()
