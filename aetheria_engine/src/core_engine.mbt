@@ -62,7 +62,7 @@ pub fn Engine::new() -> Engine {
 // target_x/y/z 用于做简单的碰撞检测
 pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
   // Toggle camera mode with Right Mouse Button
-  if @raylib.is_mouse_button_pressed(@raylib.mouse_button_right) { // 1 = right mouse button
+  if @raylib.is_mouse_button_pressed(1) { // 1 = right mouse button
     if self.camera_mode == 0 {
       self.camera_mode = 1 // Enable Free Camera
       @raylib.disable_cursor()
@@ -80,7 +80,7 @@ pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
     return
   }
   
-  if @raylib.is_mouse_button_down(@raylib.mouse_button_left) { // 0 = left mouse button
+  if @raylib.is_mouse_button_down(0) { // 0 = left mouse button
     // 鼠标按住左键拖动，更新 yaw 和 pitch
     let dx = @raylib.get_mouse_delta_x()
     let dy = @raylib.get_mouse_delta_y()
@@ -100,29 +100,29 @@ pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
   if self.state == Roam && self.camera_mode == 0 {
     let speed = 0.1
     
-    // 计算前向向量和右向向量 (在 XZ 平面上)
-    // 根据 yaw 角度计算 (yaw=0 对应 -Z 方向)
-    let forward_x = -@math.sin(self.player_yaw)
-    let forward_z = -@math.cos(self.player_yaw)
-    
-    let right_x = @math.cos(self.player_yaw)
-    let right_z = -@math.sin(self.player_yaw)
-    
-    // 组合输入
-    let move_x = (right_x * input_x + forward_x * input_z) * speed
-    let move_z = (right_z * input_x + forward_z * input_z) * speed
-    
-    let next_x = self.player_pos.x + move_x
-    let next_z = self.player_pos.z + move_z
-
-    // 碰撞检测
-    if self.world.check_collision(next_x, self.player_pos.y, next_z) {
-      if (next_x - 6.0)*(next_x - 6.0) + (next_z - 0.0)*(next_z - 0.0) < 1.0 {
-        self.state = Dialog
-        self.ui.show_dialog("You bumped into a special voxel!")
+    // 如果没有输入，就不计算移动
+    if input_x != 0.0 || input_z != 0.0 {
+      let forward_x = -@math.sin(self.player_yaw)
+      let forward_z = -@math.cos(self.player_yaw)
+      
+      let right_x = @math.cos(self.player_yaw)
+      let right_z = -@math.sin(self.player_yaw)
+      
+      let move_x = (right_x * input_x + forward_x * input_z) * speed
+      let move_z = (right_z * input_x + forward_z * input_z) * speed
+      
+      let next_x = self.player_pos.x + move_x
+      let next_z = self.player_pos.z + move_z
+  
+      // 碰撞检测
+      if self.world.check_collision(next_x, self.player_pos.y, next_z) {
+        if (next_x - 6.0)*(next_x - 6.0) + (next_z - 0.0)*(next_z - 0.0) < 1.0 {
+          self.state = Dialog
+          self.ui.show_dialog("You bumped into a special voxel!")
+        }
+      } else {
+        self.player_pos = { x: next_x, y: self.player_pos.y, z: next_z }
       }
-    } else {
-      self.player_pos = { x: next_x, y: self.player_pos.y, z: next_z }
     }
   }
 

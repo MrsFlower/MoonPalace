@@ -172,6 +172,17 @@ pub fn enable_cursor() -> Unit {
   enable_cursor_wrapper()
 }
 
+pub fn hide_cursor() -> Unit {
+  hide_cursor_wrapper()
+}
+
+pub fn show_cursor() -> Unit {
+  show_cursor_wrapper()
+}
+
+extern "C" fn hide_cursor_wrapper() = "HideCursor_wrapper"
+extern "C" fn show_cursor_wrapper() = "ShowCursor_wrapper"
+
 pub fn get_camera_position() -> (Double, Double, Double) {
   (get_camera_position_x_wrapper(), get_camera_position_y_wrapper(), get_camera_position_z_wrapper())
 }
@@ -198,6 +209,12 @@ pub fn update_camera_pro(movement_x: Double, movement_y: Double, movement_z: Dou
 
 pub fn begin_mode_3d_current_camera() -> Unit {
   begin_mode_3d_current_camera_wrapper()
+}
+
+extern "C" fn debug_global_model_wrapper() = "debug_global_model_wrapper"
+
+pub fn debug_global_model() -> Unit {
+  debug_global_model_wrapper()
 }
 
 pub fn load_global_model(path: String) -> Unit {

@@ -181,6 +181,14 @@ void EnableCursor_wrapper() {
     EnableCursor();
 }
 
+void HideCursor_wrapper() {
+    HideCursor();
+}
+
+void ShowCursor_wrapper() {
+    ShowCursor();
+}
+
 void update_camera_wrapper(int32_t mode) {
     UpdateCamera(&current_camera, mode);
 }
@@ -231,14 +239,35 @@ void EndMode3D_wrapper() {
 // Simple Model Loading (Stores globally to avoid managing pointers in Moonbit C backend for now)
 static Model global_model = { 0 };
 
+#include <stdio.h>
+
+void debug_global_model_wrapper() {
+    printf("[DEBUG] debug_global_model_wrapper called.\n");
+    if (global_model.meshCount > 0) {
+        printf("[DEBUG] Model loaded with %d meshes.\n", global_model.meshCount);
+        BoundingBox bounds = GetMeshBoundingBox(global_model.meshes[0]);
+        printf("[DEBUG] Mesh 0 bounds: min(%.2f, %.2f, %.2f) max(%.2f, %.2f, %.2f)\n", 
+            bounds.min.x, bounds.min.y, bounds.min.z,
+            bounds.max.x, bounds.max.y, bounds.max.z);
+        printf("[DEBUG] Mesh 0 vertices: %d, triangles: %d\n", 
+            global_model.meshes[0].vertexCount, global_model.meshes[0].triangleCount);
+    } else {
+        printf("[DEBUG] No model loaded.\n");
+    }
+}
 void load_global_model_from_buffer() {
     if (global_model.meshCount > 0) {
         UnloadModel(global_model);
     }
     global_model = LoadModel(text_buffer);
     
-    // Auto-center and normalize size
+    // Check if the model uses vertex colors and doesn't have a material texture.
+    // If so, we need to explicitly tell the material to use vertex colors.
     if (global_model.meshCount > 0) {
+        // By default, raylib sets material map to diffuse texture. 
+        // If there's no texture, but there are vertex colors, we should just use white texture.
+        // Actually, raylib does this automatically if mesh.colors is present.
+        
         BoundingBox bounds = GetMeshBoundingBox(global_model.meshes[0]);
         // Shift model meshes to center
         Vector3 center = {
@@ -247,26 +276,13 @@ void load_global_model_from_buffer() {
             (bounds.min.z + bounds.max.z) / 2.0f
         };
         
-        float sizeX = bounds.max.x - bounds.min.x;
-        float sizeY = bounds.max.y - bounds.min.y;
-        float sizeZ = bounds.max.z - bounds.min.z;
-        float maxSize = sizeX > sizeY ? (sizeX > sizeZ ? sizeX : sizeZ) : (sizeY > sizeZ ? sizeY : sizeZ);
-        
-        // Instead of scaling matrix which might break normals, let's just use it in DrawModelEx.
-        // We only translate here.
         Matrix translation = MatrixTranslate(-center.x, -center.y, -center.z);
         global_model.transform = translation;
-        
-        // Save the scale factor globally if we want to apply it in draw, 
-        // but for now let's just let the user scale it in the draw call
-        // Actually, Trellis outputs are sometimes very small, like 0.05. 
-        // We will scale by 1.0 / maxSize during draw.
     }
 }
 
 void draw_global_model_wrapper(double x, double y, double z, double scale) {
-    // 渲染 Trellis GLB 时，模型有时候网格混乱是因为背面剔除(Backface Culling)
-    // 但 Trellis 经常生成内部多边形，或者法线有问题。我们尝试禁用剔除看看。
+    // Disable Backface Culling
     rlDisableBackfaceCulling();
     
     // Compute scale
@@ -278,13 +294,17 @@ void draw_global_model_wrapper(double x, double y, double z, double scale) {
         float sizeZ = bounds.max.z - bounds.min.z;
         float maxSize = sizeX > sizeY ? (sizeX > sizeZ ? sizeX : sizeZ) : (sizeY > sizeZ ? sizeY : sizeZ);
         if (maxSize > 0.0001f) {
-            finalScale *= (1.0f / maxSize) * 10.0f; // normalize to size 10.0
+            // For a 512 house, scaling it to 10 might make it too small or big.
+            // Since the user said it's a 512 house plaza, let's just let the user provide the raw scale multiplier
+            // and we do NOT auto-normalize it to 10.0 here, which could be the reason for distortion if bounds calculation is wrong.
+            // Let's just use the raw scale.
         }
     }
     
+    // Default Raylib expects models to have Y-up.
     Vector3 position = { (float)x, (float)y, (float)z };
-    Vector3 rotationAxis = { 1.0f, 0.0f, 0.0f }; // rotate around X
-    float rotationAngle = -90.0f; // 大部分 GLB 是 Y up
+    Vector3 rotationAxis = { 1.0f, 0.0f, 0.0f };
+    float rotationAngle = 0.0f; // No rotation by default
     Vector3 scaleVec = { finalScale, finalScale, finalScale };
     
     DrawModelEx(global_model, position, rotationAxis, rotationAngle, scaleVec, WHITE);

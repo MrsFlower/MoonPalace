@@ -14,11 +14,12 @@ fn main {
     )
 
     // Raylib 5.0 中，如果不 DisableCursor，orbital 模式的鼠标拖拽可能受限
-    // 这里我们开启 cursor，免得鼠标被锁死
-    @raylib.enable_cursor()
+    // 但在 Custom 模式下，不需要 disable。我们在启动时默认显示鼠标。
+    @raylib.show_cursor()
 
     // 加载 GLB 模型
-    @raylib.load_global_model("../Trellis2output/DwarfWarrior_Textured_00001_.glb")
+    @raylib.load_global_model("../aetheria_engine/assets/mock_house_3x3x3.glb")
+    @raylib.debug_global_model()
 
   while not(@raylib.window_should_close()) {
     // 收集输入
@@ -52,7 +53,8 @@ fn main {
     } else {
       // Locked Mode - 只有按住鼠标左键时才允许转动视角
       if @raylib.is_mouse_button_down(0) { // 0 = left mouse button
-        @raylib.disable_cursor() // 隐藏并锁定鼠标
+        // 在按住左键时，我们仅仅是隐藏并锁定鼠标，这样我们能获取 delta_x/y
+        @raylib.disable_cursor() 
       } else {
         @raylib.enable_cursor() // 释放鼠标
       }
@@ -79,8 +81,8 @@ fn main {
     @raylib.draw_grid(20, 1.0)
     
     // Draw the GLB model
-    // 模型已经在 C 层归一化大小（缩放到了 10）并居中，所以只需放在原点
-    @raylib.draw_global_model(0.0, 0.0, 0.0, 1.0) 
+    // 缩放值根据实际 GLB 大小来决定，之前归一化会导致变形，现在用 1.0 的原始比例
+    @raylib.draw_global_model(0.0, 0.0, 0.0, 1.0)
     
     @raylib.end_mode_3d()
     
