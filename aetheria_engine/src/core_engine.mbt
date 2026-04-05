@@ -11,7 +11,7 @@ pub(all) enum GameState {
 
 pub struct Engine {
   mut state : GameState
-  mut frame_count : Int
+  mut camera_mode : Int
   ui : UIManager
   player_pos : Vector3
   world : VoxelWorld
@@ -47,7 +47,7 @@ pub fn Engine::new() -> Engine {
 
   { 
     state: Roam, // 跳过 Init 和 Loading，直接进入 Roam 模式测试控制
-    frame_count: 0,
+    camera_mode: 0, // 0 = default (custom), 1 = free
     ui: UIManager::new(),
     player_pos: { x: 0.0, y: 1.0, z: 0.0 },
     world,
@@ -56,8 +56,40 @@ pub fn Engine::new() -> Engine {
 }
 
 // target_x/y/z 用于做简单的碰撞检测
-pub fn Engine::update(self : Engine, input_x: Double, input_z: Double) -> Unit {
-  self.frame_count = self.frame_count + 1
+pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
+  // Toggle camera mode with Right Mouse Button
+  if @raylib.is_mouse_button_pressed(@raylib.mouse_button_right) { // 1 = right mouse button
+    if self.camera_mode == 0 {
+      self.camera_mode = 1 // Enable Free Camera
+    } else {
+      self.camera_mode = 0 // Disable Free Camera
+    }
+  }
+
+  // If in free camera mode, don't update player position
+  if self.camera_mode == 1 {
+    // 摄像机被 Raylib 接管了。我们也可以选择将玩家的位置同步为摄像机的位置
+    let (cx, cy, cz) = @raylib.get_camera_position()
+    self.player_pos.x = cx
+    self.player_pos.y = cy - 0.5 // Adjust for camera height
+    self.player_pos.z = cz
+    self.ui.update()
+    return
+  }
+  
+  if @raylib.is_mouse_button_down(@raylib.mouse_button_left) { // 0 = left mouse button
+    // If we are holding left click in Roam mode, do not process WASD as movement,
+    // let it just be camera rotation (Raylib handles WASD internally in FREE mode).
+    // But actually, Raylib's FREE mode might move the camera position.
+    // If we just want to look around, we should skip our custom movement.
+    let (cx, cy, cz) = @raylib.get_camera_position()
+    self.player_pos.x = cx
+    self.player_pos.y = cy - 0.5
+    self.player_pos.z = cz
+    self.ui.update()
+    return
+  }
+
   self.ui.update()
   
   // 仅在漫游状态下允许移动
@@ -98,6 +130,20 @@ pub fn Engine::dismiss_dialog(self: Engine) -> Unit {
     // 稍微把玩家推开一点防止死锁
     self.player_pos.x = self.player_pos.x - 0.5
   }
+}
+
+pub fn Engine::set_player_pos(self: Engine, x: Double, y: Double, z: Double) -> Unit {
+  self.player_pos.x = x
+  self.player_pos.y = y
+  self.player_pos.z = z
+}
+
+pub fn Engine::get_player_pos_x(self: Engine) -> Double { self.player_pos.x }
+pub fn Engine::get_player_pos_y(self: Engine) -> Double { self.player_pos.y }
+pub fn Engine::get_player_pos_z(self: Engine) -> Double { self.player_pos.z }
+
+pub fn Engine::get_camera_mode(self: Engine) -> Int {
+  self.camera_mode
 }
 
 pub fn Engine::get_state_string(self : Engine) -> String {

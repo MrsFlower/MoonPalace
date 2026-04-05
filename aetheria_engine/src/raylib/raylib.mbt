@@ -13,6 +13,18 @@ extern "C" fn clear_background_wrapper(r: Int, g: Int, b: Int, a: Int) = "ClearB
 extern "C" fn is_key_down_wrapper(key: Int) -> Int = "IsKeyDown_wrapper"
 extern "C" fn is_key_pressed_wrapper(key: Int) -> Int = "IsKeyPressed_wrapper"
 
+// 鼠标输入
+extern "C" fn is_mouse_button_down_wrapper(button: Int) -> Int = "IsMouseButtonDown_wrapper"
+extern "C" fn is_mouse_button_pressed_wrapper(button: Int) -> Int = "IsMouseButtonPressed_wrapper"
+
+pub fn is_mouse_button_down(button: Int) -> Bool {
+  is_mouse_button_down_wrapper(button) != 0
+}
+
+pub fn is_mouse_button_pressed(button: Int) -> Bool {
+  is_mouse_button_pressed_wrapper(button) != 0
+}
+
 // 安全传递字符串的 C-FFI 辅助函数
 extern "C" fn clear_text_buffer() = "clear_text_buffer"
 extern "C" fn append_text_char(c: Int) = "append_text_char"
@@ -25,7 +37,14 @@ extern "C" fn end_voxel_batch() = "end_voxel_batch"
 extern "C" fn draw_voxel_faces(x: Double, y: Double, z: Double, size: Double, u: Double, v: Double, uv_w: Double, uv_h: Double) = "draw_voxel_faces"
 
 // 3D 渲染支持
-extern "C" fn begin_mode_3d_wrapper(cam_px: Double, cam_py: Double, cam_pz: Double, tar_x: Double, tar_y: Double, tar_z: Double, up_x: Double, up_y: Double, up_z: Double, fovy: Double) = "BeginMode3D_wrapper"
+extern "C" fn setup_camera_wrapper(cam_px: Double, cam_py: Double, cam_pz: Double, tar_x: Double, tar_y: Double, tar_z: Double, up_x: Double, up_y: Double, up_z: Double, fovy: Double) = "setup_camera"
+extern "C" fn update_camera_wrapper(mode: Int) = "update_camera_wrapper"
+extern "C" fn begin_mode_3d_current_camera_wrapper() = "begin_mode_3d_current_camera_wrapper"
+
+extern "C" fn load_global_model_from_buffer() = "load_global_model_from_buffer"
+extern "C" fn draw_global_model_wrapper(x: Double, y: Double, z: Double, scale: Double) = "draw_global_model_wrapper"
+
+// extern "C" fn begin_mode_3d_wrapper(cam_px: Double, cam_py: Double, cam_pz: Double, tar_x: Double, tar_y: Double, tar_z: Double, up_x: Double, up_y: Double, up_z: Double, fovy: Double) = "BeginMode3D_wrapper"
 extern "C" fn end_mode_3d_wrapper() = "EndMode3D_wrapper"
 extern "C" fn draw_cube_wrapper(x: Double, y: Double, z: Double, w: Double, h: Double, l: Double, r: Int, g: Int, b: Int, a: Int) = "DrawCube_wrapper"
 extern "C" fn draw_cube_wires_wrapper(x: Double, y: Double, z: Double, w: Double, h: Double, l: Double, r: Int, g: Int, b: Int, a: Int) = "DrawCubeWires_wrapper"
@@ -42,6 +61,9 @@ pub let key_down: Int = 264
 pub let key_left: Int = 263
 pub let key_right: Int = 262
 pub let key_space: Int = 32
+pub let mouse_button_left: Int = 0
+pub let mouse_button_right: Int = 1
+pub let mouse_button_middle: Int = 2
 
 pub fn init_window(width: Int, height: Int, title: String) -> Unit {
   clear_text_buffer()
@@ -111,13 +133,69 @@ pub fn draw_textured_voxel(x: Double, y: Double, z: Double, size: Double, u: Dou
   draw_voxel_faces(x, y, z, size, u, v, uv_w, uv_h)
 }
 
+pub let camera_custom: Int = 0
+pub let camera_free: Int = 1
+pub let camera_orbital: Int = 2
+pub let camera_first_person: Int = 3
+pub let camera_third_person: Int = 4
+
+pub fn setup_camera(cam_px: Double, cam_py: Double, cam_pz: Double, tar_x: Double, tar_y: Double, tar_z: Double, up_x: Double, up_y: Double, up_z: Double, fovy: Double) -> Unit {
+  setup_camera_wrapper(cam_px, cam_py, cam_pz, tar_x, tar_y, tar_z, up_x, up_y, up_z, fovy)
+}
+
+// DisableCursor/EnableCursor 等 FFI 可以加，但我们为了简单先用 FREE
+extern "C" fn disable_cursor_wrapper() = "DisableCursor_wrapper"
+extern "C" fn enable_cursor_wrapper() = "EnableCursor_wrapper"
+
+pub fn disable_cursor() -> Unit {
+  disable_cursor_wrapper()
+}
+
+pub fn enable_cursor() -> Unit {
+  enable_cursor_wrapper()
+}
+
+pub fn get_camera_position() -> (Double, Double, Double) {
+  (get_camera_position_x_wrapper(), get_camera_position_y_wrapper(), get_camera_position_z_wrapper())
+}
+
+extern "C" fn get_camera_position_x_wrapper() -> Double = "get_camera_position_x_wrapper"
+extern "C" fn get_camera_position_y_wrapper() -> Double = "get_camera_position_y_wrapper"
+extern "C" fn get_camera_position_z_wrapper() -> Double = "get_camera_position_z_wrapper"
+
+pub fn set_camera_position(x: Double, y: Double, z: Double) -> Unit {
+  set_camera_position_wrapper(x, y, z)
+}
+
+extern "C" fn set_camera_position_wrapper(x: Double, y: Double, z: Double) = "set_camera_position_wrapper"
+
+pub fn update_camera(mode: Int) -> Unit {
+  update_camera_wrapper(mode)
+}
+
+pub fn begin_mode_3d_current_camera() -> Unit {
+  begin_mode_3d_current_camera_wrapper()
+}
+
+pub fn load_global_model(path: String) -> Unit {
+  clear_text_buffer()
+  for c in path {
+    append_text_char(c.to_int())
+  }
+  load_global_model_from_buffer()
+}
+
+pub fn draw_global_model(x: Double, y: Double, z: Double, scale: Double) -> Unit {
+  draw_global_model_wrapper(x, y, z, scale)
+}
+
 pub fn draw_fps(x: Int, y: Int) -> Unit {
   draw_fps_wrapper(x, y)
 }
 
-pub fn begin_mode_3d(cam_px: Double, cam_py: Double, cam_pz: Double, tar_x: Double, tar_y: Double, tar_z: Double, up_x: Double, up_y: Double, up_z: Double, fovy: Double) -> Unit {
-  begin_mode_3d_wrapper(cam_px, cam_py, cam_pz, tar_x, tar_y, tar_z, up_x, up_y, up_z, fovy)
-}
+// pub fn begin_mode_3d(cam_px: Double, cam_py: Double, cam_pz: Double, tar_x: Double, tar_y: Double, tar_z: Double, up_x: Double, up_y: Double, up_z: Double, fovy: Double) -> Unit {
+//   begin_mode_3d_wrapper(cam_px, cam_py, cam_pz, tar_x, tar_y, tar_z, up_x, up_y, up_z, fovy)
+// }
 
 pub fn end_mode_3d() -> Unit {
   end_mode_3d_wrapper()
