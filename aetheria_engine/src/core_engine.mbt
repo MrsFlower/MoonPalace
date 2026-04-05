@@ -18,7 +18,7 @@ pub struct Engine {
   mut player_pos : Vector3
   world : VoxelWorld
   materials : Map[Int, UVRect]
-  mut chunk_count : Int
+  chunk_count : Int
 }
 
 pub fn Engine::new() -> Engine {
@@ -29,14 +29,10 @@ pub fn Engine::new() -> Engine {
   
   // Try to load chunk files until we can't find more
   // (In a real game, we'd read a directory or an index file, here we just try a range)
-  for i = 0; i < 64; i = i + 1 {
+  for i = 0; i < 128; i = i + 1 {
     let path = "assets/chunks/chunk_" + i.to_string() + ".glb"
-    let content = try {
-      @fs.read_file_to_string(path) // Just to check if it exists (although this reads the whole binary, slightly inefficient but works for a quick check)
-    } catch {
-      _ => ""
-    }
-    if content.length() > 0 {
+    let exists = @fs.path_exists(path)
+    if exists {
       chunk_count = chunk_count + 1
     } else {
       break
