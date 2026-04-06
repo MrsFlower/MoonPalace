@@ -349,19 +349,12 @@ void load_custom_chunk(int index) {
 void draw_custom_chunk() {
     if (loaded_chunk.data == NULL) return;
     
-    // Naive rendering: draw a cube for every solid voxel
-    // In production we would use Mesh Generation (Greedy Meshing) or Instanced Rendering
     int width = loaded_chunk.width;
     int height = loaded_chunk.height;
     int depth = loaded_chunk.depth;
     
     float voxel_size = 0.5f;
-    Vector3 size = { voxel_size, voxel_size, voxel_size };
     
-    // Only draw voxels close to the camera to prevent FPS drop in this naive prototype
-    // For a 160x60x160 chunk, there are 1.5M voxels, drawing all naive cubes will crash Raylib
-    // We'll draw wireframe or point cloud?
-    // Let's just draw the first few or use rlgl directly.
     rlBegin(RL_QUADS);
     rlColor4ub(200, 200, 200, 255);
     
@@ -370,7 +363,9 @@ void draw_custom_chunk() {
     float offset_y = 0.0f;
     float offset_z = -(depth * voxel_size) / 2.0f;
 
-    // Draw only a small subset or sample to verify it works
+    // We use a naive culling: only draw faces if the adjacent voxel is empty or out of bounds.
+    // This is a basic form of greedy meshing / surface culling to improve FPS dramatically.
+    
     int draw_count = 0;
     for (int y = 0; y < height; y++) {
         for (int z = 0; z < depth; z++) {
@@ -381,20 +376,75 @@ void draw_custom_chunk() {
                     float py = offset_y + y * voxel_size;
                     float pz = offset_z + z * voxel_size;
                     
-                    // We can just draw a point for performance test
-                    // But since we are in RL_QUADS, let's draw a simple front face for speed
-                    rlVertex3f(px, py, pz);
-                    rlVertex3f(px + voxel_size, py, pz);
-                    rlVertex3f(px + voxel_size, py + voxel_size, pz);
-                    rlVertex3f(px, py + voxel_size, pz);
+                    float v = voxel_size;
+                    
+                    // Check neighbors
+                    int nx, ny, nz;
+                    
+                    // Top face (+Y)
+                    ny = y + 1;
+                    if (ny >= height || loaded_chunk.data[x + ny * width + z * width * height] == 0) {
+                        rlColor3f(0.8f, 0.8f, 0.8f); // Lighter top
+                        rlVertex3f(px, py + v, pz + v);
+                        rlVertex3f(px + v, py + v, pz + v);
+                        rlVertex3f(px + v, py + v, pz);
+                        rlVertex3f(px, py + v, pz);
+                    }
+                    
+                    // Bottom face (-Y)
+                    ny = y - 1;
+                    if (ny < 0 || loaded_chunk.data[x + ny * width + z * width * height] == 0) {
+                        rlColor3f(0.4f, 0.4f, 0.4f); // Darker bottom
+                        rlVertex3f(px, py, pz);
+                        rlVertex3f(px + v, py, pz);
+                        rlVertex3f(px + v, py, pz + v);
+                        rlVertex3f(px, py, pz + v);
+                    }
+                    
+                    // Front face (+Z)
+                    nz = z + 1;
+                    if (nz >= depth || loaded_chunk.data[x + y * width + nz * width * height] == 0) {
+                        rlColor3f(0.6f, 0.6f, 0.6f);
+                        rlVertex3f(px, py, pz + v);
+                        rlVertex3f(px + v, py, pz + v);
+                        rlVertex3f(px + v, py + v, pz + v);
+                        rlVertex3f(px, py + v, pz + v);
+                    }
+                    
+                    // Back face (-Z)
+                    nz = z - 1;
+                    if (nz < 0 || loaded_chunk.data[x + y * width + nz * width * height] == 0) {
+                        rlColor3f(0.6f, 0.6f, 0.6f);
+                        rlVertex3f(px, py + v, pz);
+                        rlVertex3f(px + v, py + v, pz);
+                        rlVertex3f(px + v, py, pz);
+                        rlVertex3f(px, py, pz);
+                    }
+                    
+                    // Right face (+X)
+                    nx = x + 1;
+                    if (nx >= width || loaded_chunk.data[nx + y * width + z * width * height] == 0) {
+                        rlColor3f(0.7f, 0.7f, 0.7f);
+                        rlVertex3f(px + v, py, pz + v);
+                        rlVertex3f(px + v, py, pz);
+                        rlVertex3f(px + v, py + v, pz);
+                        rlVertex3f(px + v, py + v, pz + v);
+                    }
+                    
+                    // Left face (-X)
+                    nx = x - 1;
+                    if (nx < 0 || loaded_chunk.data[nx + y * width + z * width * height] == 0) {
+                        rlColor3f(0.7f, 0.7f, 0.7f);
+                        rlVertex3f(px, py, pz);
+                        rlVertex3f(px, py, pz + v);
+                        rlVertex3f(px, py + v, pz + v);
+                        rlVertex3f(px, py + v, pz);
+                    }
                     
                     draw_count++;
-                    if (draw_count > 100000) break; // Limit for naive rendering
                 }
             }
-            if (draw_count > 100000) break;
         }
-        if (draw_count > 100000) break;
     }
     rlEnd();
 }

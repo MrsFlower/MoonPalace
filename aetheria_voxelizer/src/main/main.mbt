@@ -156,9 +156,43 @@ fn voxelize_mesh(mesh : Mesh, voxel_size : Double) -> VoxelGrid {
   grid
 }
 
+fn generate_mock_pyramid(voxel_size: Double) -> VoxelGrid {
+  let width = 64
+  let height = 32
+  let depth = 64
+  
+  let total_voxels = width * height * depth
+  let grid_data = Array::make(total_voxels, 0)
+  let grid = { width, height, depth, voxel_size, data: grid_data }
+  
+  // Generate a stepped pyramid
+  let cx = width / 2
+  let cz = depth / 2
+  
+  for y = 0; y < height; y = y + 1 {
+    let radius = height - y - 1 // radius decreases as y increases
+    if radius < 0 { continue }
+    
+    for x = cx - radius; x <= cx + radius; x = x + 1 {
+      for z = cz - radius; z <= cz + radius; z = z + 1 {
+        grid.set(x, y, z, 1)
+      }
+    }
+  }
+  
+  println("[Mock] Generated Pyramid: \{width}x\{height}x\{depth}")
+  grid
+}
+
 fn main {
   println("--- Aetheria Voxelizer Prototype ---")
+  
+  println("\nGenerating Mock Pyramid data for engine rendering test...")
+  let mock_grid = generate_mock_pyramid(0.5)
+  export_chunk(mock_grid, "mock_pyramid.chunk")
+  println("Exported mock_pyramid.chunk successfully!")
 
+  /*
   let glb_file = parse_glb_file("../aetheria_engine/assets/optimized_plaza.glb")
   match glb_file {
     Some(glb) => {
@@ -189,4 +223,5 @@ fn main {
       println("Failed to parse GLB")
     }
   }
+  */
 }
