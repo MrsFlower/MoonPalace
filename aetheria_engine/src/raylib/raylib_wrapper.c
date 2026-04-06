@@ -294,7 +294,113 @@ void draw_chunk_model_wrapper(int index, double x, double y, double z, double sc
     rlEnableBackfaceCulling();
 }
 
+// ==========================================
+// CUSTOM .CHUNK FORMAT PARSER & RENDERER
+// ==========================================
+
+typedef struct VoxelChunk {
+    int width;
+    int height;
+    int depth;
+    unsigned char* data; // 1 for solid, 0 for empty
+    Model instanced_model; // Used for instanced rendering
+} VoxelChunk;
+
+static VoxelChunk loaded_chunk = { 0 };
+
+void load_custom_chunk(int index) {
+    // For now we just load it into a global variable since we only have one chunk
+    FILE* file = fopen(text_buffer, "rb");
+    if (!file) {
+        printf("Failed to open .chunk file: %s\n", text_buffer);
+        return;
+    }
+    
+    char magic[4];
+    fread(magic, 1, 4, file);
+    if (magic[0] != 'C' || magic[1] != 'H' || magic[2] != 'N' || magic[3] != 'K') {
+        printf("Invalid magic number in .chunk file.\n");
+        fclose(file);
+        return;
+    }
+    
+    int version;
+    fread(&version, 4, 1, file);
+    fread(&loaded_chunk.width, 4, 1, file);
+    fread(&loaded_chunk.height, 4, 1, file);
+    fread(&loaded_chunk.depth, 4, 1, file);
+    
+    // Skip 8 bytes of voxel_size (double)
+    fseek(file, 8, SEEK_CUR);
+    
+    int total_voxels = loaded_chunk.width * loaded_chunk.height * loaded_chunk.depth;
+    printf("Loading .chunk: %d x %d x %d (Total %d voxels)\n", 
+        loaded_chunk.width, loaded_chunk.height, loaded_chunk.depth, total_voxels);
+        
+    if (loaded_chunk.data != NULL) {
+        free(loaded_chunk.data);
+    }
+    loaded_chunk.data = (unsigned char*)malloc(total_voxels);
+    fread(loaded_chunk.data, 1, total_voxels, file);
+    
+    fclose(file);
+}
+
+void draw_custom_chunk() {
+    if (loaded_chunk.data == NULL) return;
+    
+    // Naive rendering: draw a cube for every solid voxel
+    // In production we would use Mesh Generation (Greedy Meshing) or Instanced Rendering
+    int width = loaded_chunk.width;
+    int height = loaded_chunk.height;
+    int depth = loaded_chunk.depth;
+    
+    float voxel_size = 0.5f;
+    Vector3 size = { voxel_size, voxel_size, voxel_size };
+    
+    // Only draw voxels close to the camera to prevent FPS drop in this naive prototype
+    // For a 160x60x160 chunk, there are 1.5M voxels, drawing all naive cubes will crash Raylib
+    // We'll draw wireframe or point cloud?
+    // Let's just draw the first few or use rlgl directly.
+    rlBegin(RL_QUADS);
+    rlColor4ub(200, 200, 200, 255);
+    
+    // Offset to center the chunk
+    float offset_x = -(width * voxel_size) / 2.0f;
+    float offset_y = 0.0f;
+    float offset_z = -(depth * voxel_size) / 2.0f;
+
+    // Draw only a small subset or sample to verify it works
+    int draw_count = 0;
+    for (int y = 0; y < height; y++) {
+        for (int z = 0; z < depth; z++) {
+            for (int x = 0; x < width; x++) {
+                int idx = x + y * width + z * width * height;
+                if (loaded_chunk.data[idx] != 0) {
+                    float px = offset_x + x * voxel_size;
+                    float py = offset_y + y * voxel_size;
+                    float pz = offset_z + z * voxel_size;
+                    
+                    // We can just draw a point for performance test
+                    // But since we are in RL_QUADS, let's draw a simple front face for speed
+                    rlVertex3f(px, py, pz);
+                    rlVertex3f(px + voxel_size, py, pz);
+                    rlVertex3f(px + voxel_size, py + voxel_size, pz);
+                    rlVertex3f(px, py + voxel_size, pz);
+                    
+                    draw_count++;
+                    if (draw_count > 100000) break; // Limit for naive rendering
+                }
+            }
+            if (draw_count > 100000) break;
+        }
+        if (draw_count > 100000) break;
+    }
+    rlEnd();
+}
+
 void debug_global_model_wrapper() {
+
     printf("[DEBUG] debug_global_model_wrapper called.\n");
     if (global_model.meshCount > 0) {
         printf("[DEBUG] Model loaded with %d meshes.\n", global_model.meshCount);

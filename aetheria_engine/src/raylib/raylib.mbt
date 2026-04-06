@@ -233,8 +233,24 @@ pub fn load_chunk_model(index: Int, path: String) -> Unit {
   load_chunk_model_from_buffer(index)
 }
 
+pub fn load_custom_chunk(index: Int, path: String) -> Unit {
+  clear_text_buffer()
+  for c in path {
+    append_text_char(c.to_int())
+  }
+  load_custom_chunk_wrapper(index)
+}
+
 extern "C" fn load_chunk_model_from_buffer(index: Int) = "load_chunk_model_from_buffer"
 extern "C" fn draw_chunk_model_wrapper(index: Int, x: Double, y: Double, z: Double, scale: Double) = "draw_chunk_model_wrapper"
+
+extern "C" fn load_custom_chunk_wrapper(index: Int) = "load_custom_chunk"
+
+extern "C" fn draw_custom_chunk_wrapper() = "draw_custom_chunk"
+
+pub fn draw_custom_chunk() -> Unit {
+  draw_custom_chunk_wrapper()
+}
 
 pub fn draw_chunk_model(index: Int, x: Double, y: Double, z: Double, scale: Double) -> Unit {
   draw_chunk_model_wrapper(index, x, y, z, scale)

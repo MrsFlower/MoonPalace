@@ -23,10 +23,9 @@ fn main {
   while not(@raylib.window_should_close()) {
     // 渐进式加载模型 Chunks
     if current_chunk_to_load < chunk_count {
-      // 现在只有一个文件 optimized_plaza.glb，它包含 64 个 sub-mesh
-      // 加载它只需 1 秒左右，不再有 64 个重复贴图引发的性能灾难。
-      let path = "../aetheria_engine/assets/optimized_plaza.glb"
-      @raylib.load_chunk_model(current_chunk_to_load, path)
+      // 渐进式加载模型 Chunks
+      let path = "../aetheria_voxelizer/plaza.chunk"
+      @raylib.load_custom_chunk(0, path)
       current_chunk_to_load = current_chunk_to_load + 1
       
       // 画一个平滑的 Loading 界面，由于只加载了一个，界面更新率能维持在几十帧以上
@@ -107,10 +106,7 @@ fn main {
     
     // Draw the GLB model Chunks
     if chunk_count > 0 {
-      for i = 0; i < chunk_count; i = i + 1 {
-        // Trellis 模型的坐标已经在 python 切分时保留了，缩放放大 20 倍以便漫游
-        @raylib.draw_chunk_model(i, 0.0, 0.0, 0.0, 20.0)
-      }
+      @raylib.draw_custom_chunk()
     } else {
       @raylib.draw_global_model(0.0, 0.0, 0.0, 1.0)
     }
