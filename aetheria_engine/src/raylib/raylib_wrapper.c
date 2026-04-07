@@ -311,6 +311,117 @@ typedef struct VoxelChunk {
 } VoxelChunk;
 
 static VoxelChunk loaded_chunk = { 0 };
+static Model chunk_model = { 0 };
+static bool is_chunk_model_ready = false;
+
+void build_chunk_model() {
+    if (loaded_chunk.data == NULL) return;
+    
+    int width = loaded_chunk.width;
+    int height = loaded_chunk.height;
+    int depth = loaded_chunk.depth;
+    float v = 0.5f;
+    
+    // 1. Count exposed faces for memory allocation
+    int face_count = 0;
+    for (int y = 0; y < height; y++) {
+        for (int z = 0; z < depth; z++) {
+            for (int x = 0; x < width; x++) {
+                if (loaded_chunk.data[x + y*width + z*width*height] == 0) continue;
+                if (y + 1 >= height || loaded_chunk.data[x + (y+1)*width + z*width*height] == 0) face_count++;
+                if (y - 1 < 0 || loaded_chunk.data[x + (y-1)*width + z*width*height] == 0) face_count++;
+                if (z + 1 >= depth || loaded_chunk.data[x + y*width + (z+1)*width*height] == 0) face_count++;
+                if (z - 1 < 0 || loaded_chunk.data[x + y*width + (z-1)*width*height] == 0) face_count++;
+                if (x + 1 >= width || loaded_chunk.data[(x+1) + y*width + z*width*height] == 0) face_count++;
+                if (x - 1 < 0 || loaded_chunk.data[(x-1) + y*width + z*width*height] == 0) face_count++;
+            }
+        }
+    }
+    
+    if (face_count == 0) return;
+    printf("[VoxelRenderer] Compiling Mesh with %d exposed faces...\n", face_count);
+    
+    Mesh mesh = { 0 };
+    mesh.triangleCount = face_count * 2;
+    mesh.vertexCount = mesh.triangleCount * 3;
+    mesh.vertices = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float));
+    mesh.normals = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float));
+    mesh.colors = (unsigned char *)MemAlloc(mesh.vertexCount * 4 * sizeof(unsigned char));
+    
+    int v_idx = 0;
+    int n_idx = 0;
+    int c_idx = 0;
+    
+    float offset_x = -(width * v) / 2.0f;
+    float offset_y = 0.0f;
+    float offset_z = -(depth * v) / 2.0f;
+    
+    // Macro to add 2 triangles (6 vertices) for a Quad
+    #define ADD_VERTEX(vx, vy, vz, nx, ny, nz, r, g, b, a) \
+        mesh.vertices[v_idx++] = (vx); mesh.vertices[v_idx++] = (vy); mesh.vertices[v_idx++] = (vz); \
+        mesh.normals[n_idx++] = (nx); mesh.normals[n_idx++] = (ny); mesh.normals[n_idx++] = (nz); \
+        mesh.colors[c_idx++] = (r); mesh.colors[c_idx++] = (g); mesh.colors[c_idx++] = (b); mesh.colors[c_idx++] = (a);
+    
+    #define ADD_QUAD(v1x,v1y,v1z, v2x,v2y,v2z, v3x,v3y,v3z, v4x,v4y,v4z, nx,ny,nz, r,g,b) \
+        ADD_VERTEX(v1x,v1y,v1z, nx,ny,nz, r,g,b,255) \
+        ADD_VERTEX(v2x,v2y,v2z, nx,ny,nz, r,g,b,255) \
+        ADD_VERTEX(v3x,v3y,v3z, nx,ny,nz, r,g,b,255) \
+        ADD_VERTEX(v1x,v1y,v1z, nx,ny,nz, r,g,b,255) \
+        ADD_VERTEX(v3x,v3y,v3z, nx,ny,nz, r,g,b,255) \
+        ADD_VERTEX(v4x,v4y,v4z, nx,ny,nz, r,g,b,255)
+        
+    for (int y = 0; y < height; y++) {
+        for (int z = 0; z < depth; z++) {
+            for (int x = 0; x < width; x++) {
+                if (loaded_chunk.data[x + y*width + z*width*height] == 0) continue;
+                
+                float px = offset_x + x * v;
+                float py = offset_y + y * v;
+                float pz = offset_z + z * v;
+                
+                // Simple height-based grayscale coloring for testing
+                unsigned char cr = 200 - (y * 2);
+                unsigned char cg = 200 - (y * 2);
+                unsigned char cb = 200 - (y * 2);
+                if (y * 2 > 150) { cr = 50; cg = 50; cb = 50; }
+                
+                // Top (+Y)
+                if (y + 1 >= height || loaded_chunk.data[x + (y+1)*width + z*width*height] == 0) {
+                    unsigned char c = (unsigned char)(cr + 20); if(c>255) c=255;
+                    ADD_QUAD(px,py+v,pz, px,py+v,pz+v, px+v,py+v,pz+v, px+v,py+v,pz, 0,1,0, c,c,c);
+                }
+                // Bottom (-Y)
+                if (y - 1 < 0 || loaded_chunk.data[x + (y-1)*width + z*width*height] == 0) {
+                    unsigned char c = (unsigned char)(cr - 40); if(cr<40) c=0;
+                    ADD_QUAD(px,py,pz+v, px,py,pz, px+v,py,pz, px+v,py,pz+v, 0,-1,0, c,c,c);
+                }
+                // Front (+Z)
+                if (z + 1 >= depth || loaded_chunk.data[x + y*width + (z+1)*width*height] == 0) {
+                    unsigned char c = (unsigned char)(cr - 10); if(cr<10) c=0;
+                    ADD_QUAD(px,py,pz+v, px+v,py,pz+v, px+v,py+v,pz+v, px,py+v,pz+v, 0,0,1, c,c,c);
+                }
+                // Back (-Z)
+                if (z - 1 < 0 || loaded_chunk.data[x + y*width + (z-1)*width*height] == 0) {
+                    unsigned char c = (unsigned char)(cr - 10); if(cr<10) c=0;
+                    ADD_QUAD(px+v,py,pz, px,py,pz, px,py+v,pz, px+v,py+v,pz, 0,0,-1, c,c,c);
+                }
+                // Right (+X)
+                if (x + 1 >= width || loaded_chunk.data[(x+1) + y*width + z*width*height] == 0) {
+                    ADD_QUAD(px+v,py,pz+v, px+v,py,pz, px+v,py+v,pz, px+v,py+v,pz+v, 1,0,0, cr,cr,cr);
+                }
+                // Left (-X)
+                if (x - 1 < 0 || loaded_chunk.data[(x-1) + y*width + z*width*height] == 0) {
+                    ADD_QUAD(px,py,pz, px,py,pz+v, px,py+v,pz+v, px,py+v,pz, -1,0,0, cr,cr,cr);
+                }
+            }
+        }
+    }
+    
+    UploadMesh(&mesh, false);
+    chunk_model = LoadModelFromMesh(mesh);
+    is_chunk_model_ready = true;
+    printf("[VoxelRenderer] Mesh compiled and uploaded to GPU successfully.\n");
+}
 
 void load_custom_chunk(int index) {
     // For now we just load it into a global variable since we only have one chunk
@@ -348,109 +459,18 @@ void load_custom_chunk(int index) {
     fread(loaded_chunk.data, 1, total_voxels, file);
     
     fclose(file);
+    
+    // Automatically build the optimized mesh once loaded
+    build_chunk_model();
 }
 
 void draw_custom_chunk() {
     if (loaded_chunk.data == NULL) return;
     
-    int width = loaded_chunk.width;
-    int height = loaded_chunk.height;
-    int depth = loaded_chunk.depth;
-    
-    float voxel_size = 0.5f;
-    
-    rlBegin(RL_QUADS);
-    rlColor4ub(200, 200, 200, 255);
-    
-    // Offset to center the chunk
-    float offset_x = -(width * voxel_size) / 2.0f;
-    float offset_y = 0.0f;
-    float offset_z = -(depth * voxel_size) / 2.0f;
-
-    // We use a naive culling: only draw faces if the adjacent voxel is empty or out of bounds.
-    // This is a basic form of greedy meshing / surface culling to improve FPS dramatically.
-    
-    int draw_count = 0;
-    for (int y = 0; y < height; y++) {
-        for (int z = 0; z < depth; z++) {
-            for (int x = 0; x < width; x++) {
-                int idx = x + y * width + z * width * height;
-                if (loaded_chunk.data[idx] != 0) {
-                    float px = offset_x + x * voxel_size;
-                    float py = offset_y + y * voxel_size;
-                    float pz = offset_z + z * voxel_size;
-                    
-                    float v = voxel_size;
-                    
-                    // Check neighbors
-                    int nx, ny, nz;
-                    
-                    // Top face (+Y)
-                    ny = y + 1;
-                    if (ny >= height || loaded_chunk.data[x + ny * width + z * width * height] == 0) {
-                        rlColor3f(0.8f, 0.8f, 0.8f); // Lighter top
-                        rlVertex3f(px, py + v, pz + v);
-                        rlVertex3f(px + v, py + v, pz + v);
-                        rlVertex3f(px + v, py + v, pz);
-                        rlVertex3f(px, py + v, pz);
-                    }
-                    
-                    // Bottom face (-Y)
-                    ny = y - 1;
-                    if (ny < 0 || loaded_chunk.data[x + ny * width + z * width * height] == 0) {
-                        rlColor3f(0.4f, 0.4f, 0.4f); // Darker bottom
-                        rlVertex3f(px, py, pz);
-                        rlVertex3f(px + v, py, pz);
-                        rlVertex3f(px + v, py, pz + v);
-                        rlVertex3f(px, py, pz + v);
-                    }
-                    
-                    // Front face (+Z)
-                    nz = z + 1;
-                    if (nz >= depth || loaded_chunk.data[x + y * width + nz * width * height] == 0) {
-                        rlColor3f(0.6f, 0.6f, 0.6f);
-                        rlVertex3f(px, py, pz + v);
-                        rlVertex3f(px + v, py, pz + v);
-                        rlVertex3f(px + v, py + v, pz + v);
-                        rlVertex3f(px, py + v, pz + v);
-                    }
-                    
-                    // Back face (-Z)
-                    nz = z - 1;
-                    if (nz < 0 || loaded_chunk.data[x + y * width + nz * width * height] == 0) {
-                        rlColor3f(0.6f, 0.6f, 0.6f);
-                        rlVertex3f(px, py + v, pz);
-                        rlVertex3f(px + v, py + v, pz);
-                        rlVertex3f(px + v, py, pz);
-                        rlVertex3f(px, py, pz);
-                    }
-                    
-                    // Right face (+X)
-                    nx = x + 1;
-                    if (nx >= width || loaded_chunk.data[nx + y * width + z * width * height] == 0) {
-                        rlColor3f(0.7f, 0.7f, 0.7f);
-                        rlVertex3f(px + v, py, pz + v);
-                        rlVertex3f(px + v, py, pz);
-                        rlVertex3f(px + v, py + v, pz);
-                        rlVertex3f(px + v, py + v, pz + v);
-                    }
-                    
-                    // Left face (-X)
-                    nx = x - 1;
-                    if (nx < 0 || loaded_chunk.data[nx + y * width + z * width * height] == 0) {
-                        rlColor3f(0.7f, 0.7f, 0.7f);
-                        rlVertex3f(px, py, pz);
-                        rlVertex3f(px, py, pz + v);
-                        rlVertex3f(px, py + v, pz + v);
-                        rlVertex3f(px, py + v, pz);
-                    }
-                    
-                    draw_count++;
-                }
-            }
-        }
+    if (is_chunk_model_ready) {
+        Vector3 position = { 0.0f, 0.0f, 0.0f };
+        DrawModel(chunk_model, position, 1.0f, WHITE);
     }
-    rlEnd();
 }
 
 void debug_global_model_wrapper() {
