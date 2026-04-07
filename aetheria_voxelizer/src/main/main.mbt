@@ -192,36 +192,34 @@ fn main {
   export_chunk(mock_grid, "mock_pyramid.chunk")
   println("Exported mock_pyramid.chunk successfully!")
 
-  /*
-  let glb_file = parse_glb_file("../aetheria_engine/assets/optimized_plaza.glb")
-  match glb_file {
-    Some(glb) => {
-      println("GLB parsed successfully!")
-      println("JSON string length: \{glb.json_string.length()}")
-      
-      let mesh_opt = extract_mesh(glb)
-      match mesh_opt {
-        Some(raw_mesh) => {
-          println("\n1. Raw Mesh Bounds:")
-          let (min, max) = raw_mesh.get_bounds()
-          println("Min: \{min}, Max: \{max}")
-          
-          println("\n2. Scaling to Physical Size (80m x 30m x 80m)...")
-          let scaled_mesh = scale_mesh_to_physical_size(raw_mesh, 80.0, 30.0, 80.0)
-          
-          println("\n3. Voxelizing with 0.5m resolution...")
-          let grid = voxelize_mesh(scaled_mesh, 0.5)
-          
-          println("\n4. Exporting to plaza.chunk...")
-          export_chunk(grid, "plaza.chunk")
-          println("Export complete!")
-        }
-        None => println("Failed to extract mesh from GLB")
-      }
-    }
-    None => {
-      println("Failed to parse GLB")
-    }
-  }
-  */
+  // let glb_file = parse_glb_file("../aetheria_engine/assets/optimized_plaza.glb")
+  // match glb_file {
+  //   Some(glb) => {
+  //     println("GLB parsed successfully!")
+  //     println("JSON string length: \{glb.json_string.length()}")
+  //     
+  //     let mesh_opt = extract_mesh(glb)
+  //     match mesh_opt {
+  //       Some(raw_mesh) => {
+  //         println("\n1. Raw Mesh Bounds:")
+  //         let (min, max) = raw_mesh.get_bounds()
+  //         println("Min: \{min}, Max: \{max}")
+  //         
+  //         println("\n2. Scaling to Physical Size (80m x 30m x 80m)...")
+  //         let scaled_mesh = scale_mesh_to_physical_size(raw_mesh, 80.0, 30.0, 80.0)
+  //         
+  //         println("\n3. Voxelizing with 0.5m resolution...")
+  //         let grid = voxelize_mesh(scaled_mesh, 0.5)
+  //         
+  //         println("\n4. Exporting to plaza.chunk...")
+  //         export_chunk(grid, "plaza.chunk")
+  //         println("Export complete!")
+  //       }
+  //       None => println("Failed to extract mesh from GLB")
+  //     }
+  //   }
+  //   None => {
+  //     println("Failed to parse GLB")
+  //   }
+  // }
 }
