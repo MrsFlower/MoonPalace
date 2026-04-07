@@ -50,26 +50,22 @@ fn Mesh::get_bounds(self : Mesh) -> (Vector3, Vector3) {
 }
 
 // 核心逻辑 1：根据输入的物理尺寸 (Target Physical Size) 对网格进行缩放
-fn scale_mesh_to_physical_size(mesh : Mesh, target_x : Double, target_y : Double, target_z : Double) -> Mesh {
+fn scale_mesh_to_physical_size(mesh : Mesh, target_x : Double) -> Mesh {
   let (min_pt, max_pt) = mesh.get_bounds()
   let current_x = max_pt.x - min_pt.x
-  let current_y = max_pt.y - min_pt.y
-  let current_z = max_pt.z - min_pt.z
 
-  // 计算每个轴的缩放比例（如果原始轴长度为 0 则不缩放）
-  let scale_x = if current_x > 0.0 { target_x / current_x } else { 1.0 }
-  let scale_y = if current_y > 0.0 { target_y / current_y } else { 1.0 }
-  let scale_z = if current_z > 0.0 { target_z / current_z } else { 1.0 }
+  // 计算统一缩放比例以保持模型原始比例，防止高度被压缩
+  let uniform_scale = if current_x > 0.0 { target_x / current_x } else { 1.0 }
 
-  println("[Voxelizer] Scale Factors: X=\{scale_x}, Y=\{scale_y}, Z=\{scale_z}")
+  println("[Voxelizer] Uniform Scale Factor: \{uniform_scale}")
 
   let scaled_vertices = Array::new(capacity=mesh.vertices.length())
   for v in mesh.vertices {
     // 将模型移动到原点并缩放
     scaled_vertices.push({
-      x: (v.x - min_pt.x) * scale_x,
-      y: (v.y - min_pt.y) * scale_y,
-      z: (v.z - min_pt.z) * scale_z
+      x: (v.x - min_pt.x) * uniform_scale,
+      y: (v.y - min_pt.y) * uniform_scale,
+      z: (v.z - min_pt.z) * uniform_scale
     })
   }
 
@@ -211,8 +207,8 @@ fn main {
           let (min, max) = raw_mesh.get_bounds()
           println("Min: \{min}, Max: \{max}")
           
-          println("\n2. Scaling to Physical Size (80m x 30m x 80m)...")
-          let scaled_mesh = scale_mesh_to_physical_size(raw_mesh, 80.0, 30.0, 80.0)
+          println("\n2. Scaling to Physical Size (80m wide)...")
+          let scaled_mesh = scale_mesh_to_physical_size(raw_mesh, 80.0)
           
           println("\n3. Voxelizing with 0.5m resolution...")
           let grid = voxelize_mesh(scaled_mesh, 0.5)

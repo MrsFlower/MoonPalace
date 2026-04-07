@@ -1,7 +1,7 @@
 fn main {
   let engine = @src.Engine::new()
   
-  println("Aetheria3D Engine Starting UI Mode...")
+  println("Aetheria3D Engine Starting UI Mode... (v2)")
   
   @raylib.init_window(800, 600, "Aetheria3D - Moonbit & Raylib")
   @raylib.set_target_fps(60)
@@ -139,3 +139,5 @@ fn main {
   @raylib.close_window()
   println("Aetheria3D Engine Stopped.")
 }
+// force rebuild
+pub fn dummy2() -> Unit { () }

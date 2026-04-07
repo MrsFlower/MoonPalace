@@ -422,7 +422,7 @@ void build_chunk_model() {
         // Bottom (-Y)
         if (y - 1 < 0 || loaded_chunk.data[x + (y-1)*width + z*width*height] == 0) {
             unsigned char c = (unsigned char)(cr - 40); if(cr<40) c=0;
-            if (loaded_chunk.has_uv) c = 255;
+            if (loaded_chunk.has_uv) c = 120;
             ADD_QUAD(px,py,pz+v, GET_U(4),GET_V(4),
                      px,py,pz,   GET_U(0),GET_V(0),
                      px+v,py,pz, GET_U(1),GET_V(1),
@@ -432,7 +432,7 @@ void build_chunk_model() {
         // Front (+Z)
         if (z + 1 >= depth || loaded_chunk.data[x + y*width + (z+1)*width*height] == 0) {
             unsigned char c = (unsigned char)(cr - 10); if(cr<10) c=0;
-            if (loaded_chunk.has_uv) c = 255;
+            if (loaded_chunk.has_uv) c = 210;
             ADD_QUAD(px,py,pz+v,     GET_U(4),GET_V(4),
                      px+v,py,pz+v,   GET_U(5),GET_V(5),
                      px+v,py+v,pz+v, GET_U(7),GET_V(7),
@@ -442,7 +442,7 @@ void build_chunk_model() {
         // Back (-Z)
         if (z - 1 < 0 || loaded_chunk.data[x + y*width + (z-1)*width*height] == 0) {
             unsigned char c = (unsigned char)(cr - 10); if(cr<10) c=0;
-            if (loaded_chunk.has_uv) c = 255;
+            if (loaded_chunk.has_uv) c = 210;
             ADD_QUAD(px+v,py,pz,   GET_U(1),GET_V(1),
                      px,py,pz,     GET_U(0),GET_V(0),
                      px,py+v,pz,   GET_U(2),GET_V(2),
@@ -451,19 +451,23 @@ void build_chunk_model() {
         }
         // Right (+X)
         if (x + 1 >= width || loaded_chunk.data[(x+1) + y*width + z*width*height] == 0) {
+            unsigned char c = cr;
+            if (loaded_chunk.has_uv) c = 180;
             ADD_QUAD(px+v,py,pz+v,   GET_U(5),GET_V(5),
                      px+v,py,pz,     GET_U(1),GET_V(1),
                      px+v,py+v,pz,   GET_U(3),GET_V(3),
                      px+v,py+v,pz+v, GET_U(7),GET_V(7),
-                     1,0,0, cr,cr,cr);
+                     1,0,0, c,c,c);
         }
         // Left (-X)
         if (x - 1 < 0 || loaded_chunk.data[(x-1) + y*width + z*width*height] == 0) {
+            unsigned char c = cr;
+            if (loaded_chunk.has_uv) c = 180;
             ADD_QUAD(px,py,pz,     GET_U(0),GET_V(0),
                      px,py,pz+v,   GET_U(4),GET_V(4),
                      px,py+v,pz+v, GET_U(6),GET_V(6),
                      px,py+v,pz,   GET_U(2),GET_V(2),
-                     -1,0,0, cr,cr,cr);
+                     -1,0,0, c,c,c);
         }
         solid_idx++;
     }
@@ -498,10 +502,11 @@ void load_custom_chunk(int index) {
     
     // Skip 8 bytes of voxel_size (double)
     fseek(file, 8, SEEK_CUR);
+    fread(&loaded_chunk.has_uv, 4, 1, file);
     
     int total_voxels = loaded_chunk.width * loaded_chunk.height * loaded_chunk.depth;
-    printf("Loading .chunk: %d x %d x %d (Total %d voxels)\n", 
-        loaded_chunk.width, loaded_chunk.height, loaded_chunk.depth, total_voxels);
+    printf("Loading .chunk: %d x %d x %d (Total %d voxels), has_uv: %d\n", 
+        loaded_chunk.width, loaded_chunk.height, loaded_chunk.depth, total_voxels, loaded_chunk.has_uv);
         
     if (loaded_chunk.data != NULL) {
         free(loaded_chunk.data);
@@ -509,6 +514,16 @@ void load_custom_chunk(int index) {
     loaded_chunk.data = (unsigned char*)malloc(total_voxels);
     fread(loaded_chunk.data, 1, total_voxels, file);
     
+    if (loaded_chunk.has_uv) {
+        int solid_count = 0;
+        for (int i = 0; i < total_voxels; i++) {
+            if (loaded_chunk.data[i] != 0) solid_count++;
+        }
+        loaded_chunk.uvs = (float*)malloc(solid_count * 16 * sizeof(float));
+        fread(loaded_chunk.uvs, sizeof(float), solid_count * 16, file);
+        printf("[DEBUG] Chunk has UVs. Read %d solid voxels UV data. First voxel UV0: %f, %f\n", solid_count, loaded_chunk.uvs[0], loaded_chunk.uvs[1]);
+    }
+
     fclose(file);
     
     // Automatically build the optimized mesh once loaded

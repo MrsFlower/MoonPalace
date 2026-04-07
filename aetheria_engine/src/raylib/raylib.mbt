@@ -259,6 +259,7 @@ pub fn draw_custom_chunk() -> Unit {
 }
 
 pub fn bind_atlas_to_chunk() -> Unit {
+  // trigger recompile
   bind_atlas_to_chunk_wrapper()
 }
 
@@ -294,3 +295,4 @@ pub fn draw_grid(slices: Int, spacing: Double) -> Unit {
   draw_grid_wrapper(slices, spacing)
 }
 
+pub fn dummy_trigger_rebuild3() -> Unit { () }
