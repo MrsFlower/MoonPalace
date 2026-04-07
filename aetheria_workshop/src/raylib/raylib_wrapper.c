@@ -746,3 +746,7 @@ void DrawCubeWires_wrapper(double x, double y, double z, double w, double h, dou
 void DrawGrid_wrapper(int32_t slices, double spacing) {
     DrawGrid(slices, (float)spacing);
 }
+
+void system_command_wrapper_buffered() {
+    system(text_buffer);
+}

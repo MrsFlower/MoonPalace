@@ -147,6 +147,16 @@ pub fn get_mouse_y() -> Int {
   get_mouse_y_wrapper()
 }
 
+extern "C" fn system_command_wrapper_buffered() = "system_command_wrapper_buffered"
+
+pub fn system_command(cmd: String) -> Unit {
+  clear_text_buffer()
+  for c in cmd {
+    append_text_char(c.to_int())
+  }
+  system_command_wrapper_buffered()
+}
+
 pub fn is_key_down(key: Int) -> Bool {
   is_key_down_wrapper(key) != 0
 }
