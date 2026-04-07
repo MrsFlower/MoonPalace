@@ -1,3 +1,8 @@
+struct Vector2 {
+  u : Double
+  v : Double
+} derive(Show, Default)
+
 struct Vector3 {
   x : Double
   y : Double
@@ -12,6 +17,7 @@ struct Triangle {
 
 struct Mesh {
   vertices : Array[Vector3]
+  uvs : Array[Vector2]
   indices : Array[Int]
 } derive(Show)
 
@@ -67,7 +73,7 @@ fn scale_mesh_to_physical_size(mesh : Mesh, target_x : Double, target_y : Double
     })
   }
 
-  { vertices: scaled_vertices, indices: mesh.indices }
+  { vertices: scaled_vertices, uvs: mesh.uvs, indices: mesh.indices }
 }
 
 // 辅助：获取 1D 数组的 3D 索引
@@ -139,8 +145,8 @@ fn voxelize_mesh(mesh : Mesh, voxel_size : Double) -> VoxelGrid {
       for vy = min_vy; vy <= max_vy; vy = vy + 1 {
         for vz = min_vz; vz <= max_vz; vz = vz + 1 {
           // 这里可以加入精确的 AABB-Triangle 相交测试 (Separating Axis Theorem)
-          // 作为原型，我们暂时将三角形 Bounding Box 覆盖的所有体素标记为实心
-          grid.set(vx, vy, vz, 1)
+          // 作为原型，我们暂时将三角形 Bounding Box 覆盖的所有体素标记为该三角形的 ID (i + 1)
+          grid.set(vx, vy, vz, i + 1)
         }
       }
     }
@@ -189,7 +195,7 @@ fn main {
   
   println("\nGenerating Mock Pyramid data for engine rendering test...")
   let mock_grid = generate_mock_pyramid(0.5)
-  export_chunk(mock_grid, "mock_pyramid.chunk")
+  export_chunk(mock_grid, None, "mock_pyramid.chunk")
   println("Exported mock_pyramid.chunk successfully!")
 
   let glb_file = parse_glb_file("../aetheria_engine/assets/optimized_plaza.glb")
@@ -212,7 +218,7 @@ fn main {
           let grid = voxelize_mesh(scaled_mesh, 0.5)
           
           println("\n4. Exporting to plaza.chunk...")
-          export_chunk(grid, "plaza.chunk")
+          export_chunk(grid, Some(scaled_mesh), "plaza.chunk")
           println("Export complete!")
         }
         None => println("Failed to extract mesh from GLB")

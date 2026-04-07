@@ -147,6 +147,7 @@ pub fn extract_mesh(glb: GLTF) -> Mesh? {
   }
 
   let all_vertices = Array::new()
+  let all_uvs = Array::new()
   let all_indices = Array::new()
   
   // For each mesh in meshes array
@@ -167,43 +168,60 @@ pub fn extract_mesh(glb: GLTF) -> Mesh? {
       let attributes = match prim.get("attributes") { Some(Object(a)) => a; _ => continue }
       
       let pos_acc_idx = match attributes.get("POSITION") { Some(Number(n)) => n.to_int(); _ => continue }
+      let uv_acc_idx = match attributes.get("TEXCOORD_0") { Some(Number(n)) => n.to_int(); _ => -1 }
       let idx_acc_idx = match prim.get("indices") { Some(Number(n)) => n.to_int(); _ => continue }
       
       // Get Accessors
       let acc_arr = match accessors { Array(arr) => arr; _ => return None }
       let pos_acc = match acc_arr[pos_acc_idx] { Object(o) => o; _ => continue }
+      let uv_acc = if uv_acc_idx >= 0 { match acc_arr[uv_acc_idx] { Object(o) => o; _ => pos_acc } } else { pos_acc }
       let idx_acc = match acc_arr[idx_acc_idx] { Object(o) => o; _ => continue }
       
       let pos_count = match pos_acc.get("count") { Some(Number(n)) => n.to_int(); _ => continue }
       let idx_count = match idx_acc.get("count") { Some(Number(n)) => n.to_int(); _ => continue }
       
       let pos_bv_idx = match pos_acc.get("bufferView") { Some(Number(n)) => n.to_int(); _ => continue }
+      let uv_bv_idx = match uv_acc.get("bufferView") { Some(Number(n)) => n.to_int(); _ => pos_bv_idx }
       let idx_bv_idx = match idx_acc.get("bufferView") { Some(Number(n)) => n.to_int(); _ => continue }
       
       let pos_acc_offset = match pos_acc.get("byteOffset") { Some(Number(n)) => n.to_int(); _ => 0 }
+      let uv_acc_offset = match uv_acc.get("byteOffset") { Some(Number(n)) => n.to_int(); _ => 0 }
       let idx_acc_offset = match idx_acc.get("byteOffset") { Some(Number(n)) => n.to_int(); _ => 0 }
       let idx_type = match idx_acc.get("componentType") { Some(Number(n)) => n.to_int(); _ => 5123 } // 5123=ushort, 5125=uint
       
       // Get BufferViews
       let bv_arr = match bufferViews { Array(arr) => arr; _ => return None }
       let pos_bv = match bv_arr[pos_bv_idx] { Object(o) => o; _ => continue }
+      let uv_bv = match bv_arr[uv_bv_idx] { Object(o) => o; _ => pos_bv }
       let idx_bv = match bv_arr[idx_bv_idx] { Object(o) => o; _ => continue }
       
       let pos_bv_offset = match pos_bv.get("byteOffset") { Some(Number(n)) => n.to_int(); _ => 0 }
+      let uv_bv_offset = match uv_bv.get("byteOffset") { Some(Number(n)) => n.to_int(); _ => 0 }
       let idx_bv_offset = match idx_bv.get("byteOffset") { Some(Number(n)) => n.to_int(); _ => 0 }
       
       // Assume VEC3 FLOAT for positions: 12 bytes per element
       let pos_byte_stride = match pos_bv.get("byteStride") { Some(Number(n)) => n.to_int(); _ => 12 }
+      // Assume VEC2 FLOAT for UVs: 8 bytes per element
+      let uv_byte_stride = match uv_bv.get("byteStride") { Some(Number(n)) => n.to_int(); _ => 8 }
       
       let vertex_offset_base = all_vertices.length()
       
-      // Read vertices
+      // Read vertices and UVs
       for i = 0; i < pos_count; i = i + 1 {
         let offset = pos_bv_offset + pos_acc_offset + i * pos_byte_stride
         let vx = read_f32(offset)
         let vy = read_f32(offset + 4)
         let vz = read_f32(offset + 8)
         all_vertices.push({ x: vx, y: vy, z: vz })
+        
+        if uv_acc_idx >= 0 {
+          let u_offset = uv_bv_offset + uv_acc_offset + i * uv_byte_stride
+          let u = read_f32(u_offset)
+          let v = read_f32(u_offset + 4)
+          all_uvs.push({ u: u, v: v })
+        } else {
+          all_uvs.push({ u: 0.0, v: 0.0 })
+        }
       }
       
       // Read indices
@@ -221,16 +239,34 @@ pub fn extract_mesh(glb: GLTF) -> Mesh? {
   }
   
   println("Extracted total vertices: \{all_vertices.length()}")
+  println("Extracted total uvs: \{all_uvs.length()}")
   println("Extracted total indices: \{all_indices.length()}")
   
-  Some({ vertices: all_vertices, indices: all_indices })
+  Some({ vertices: all_vertices, uvs: all_uvs, indices: all_indices })
 }
 
-pub fn export_chunk(grid: VoxelGrid, path: String) -> Unit {
+pub fn export_chunk(grid: VoxelGrid, mesh_opt: Mesh?, path: String) -> Unit {
   let total_voxels = grid.width * grid.height * grid.depth
-  let buf_len = 28 + total_voxels
+  let mut solid_count = 0
+  for i = 0; i < total_voxels; i = i + 1 {
+    if grid.data[i] != 0 {
+      solid_count = solid_count + 1
+    }
+  }
+
+  // Chunk format:
+  // 0-3: "CHNK"
+  // 4-7: version
+  // 8-19: width, height, depth
+  // 20-27: voxel_size (double, 8 bytes, ignored for now)
+  // 28-31: has_uv (1 = true, 0 = false)
+  // 32..32+total_voxels: 1D grid array (1 byte per voxel, 1=solid, 0=empty)
+  // [If has_uv]: 32+total_voxels .. end: 8 UVs (16 floats) per solid voxel in the same order as they appear in the grid array.
   
-  // Use Bytes directly if possible, or an array first
+  let has_uv = match mesh_opt { Some(_) => 1; None => 0 }
+  let uv_data_len = if has_uv == 1 { solid_count * 16 * 4 } else { 0 }
+  let buf_len = 32 + total_voxels + uv_data_len
+  
   let buf = Array::make(buf_len, b'\x00')
   
   // Magic "CHNK"
@@ -247,6 +283,26 @@ pub fn export_chunk(grid: VoxelGrid, path: String) -> Unit {
     buf[offset + 3] = val.lsr(24).land(0xFF).to_byte()
   }
   
+  // Helper to write Double as Float32
+  fn write_f32(offset: Int, val: Double) {
+    let bits = if val == 0.0 { 0 } else {
+      let b64 = val.reinterpret_as_i64()
+      let sign = b64.lsr(63).land(1L)
+      let exp_f64 = b64.lsr(52).land(2047L)
+      let mant_f64 = b64.land(4503599627370495L) // 0xFFFFFFFFFFFFF
+      let exp_f32 = exp_f64 - 1023L + 127L
+      let mant_f32 = mant_f64.lsr(29)
+      
+      let s = sign.to_int()
+      let e = exp_f32.to_int().land(255)
+      let m = mant_f32.to_int().land(8388607)
+      
+      (s << 31).lor(e << 23).lor(m)
+    }
+    write_i32(offset, bits)
+  }
+
+  
   write_i32(4, 1) // version
   write_i32(8, grid.width)
   write_i32(12, grid.height)
@@ -256,9 +312,104 @@ pub fn export_chunk(grid: VoxelGrid, path: String) -> Unit {
   write_i32(20, 0)
   write_i32(24, 0)
   
-  let data_offset = 28
+  write_i32(28, has_uv)
+  
+  let data_offset = 32
   for i = 0; i < total_voxels; i = i + 1 {
     buf[data_offset + i] = if grid.data[i] != 0 { b'\x01' } else { b'\x00' }
+  }
+
+  // Write UV data if we have mesh
+  match mesh_opt {
+    Some(mesh) => {
+      let mut uv_offset = 32 + total_voxels
+      for i = 0; i < total_voxels; i = i + 1 {
+        let val = grid.data[i]
+        if val != 0 {
+          let tri_id = val - 1
+          
+          let v0 = mesh.vertices[mesh.indices[tri_id * 3]]
+          let v1 = mesh.vertices[mesh.indices[tri_id * 3 + 1]]
+          let v2 = mesh.vertices[mesh.indices[tri_id * 3 + 2]]
+          
+          let uv0 = mesh.uvs[mesh.indices[tri_id * 3]]
+          let uv1 = mesh.uvs[mesh.indices[tri_id * 3 + 1]]
+          let uv2 = mesh.uvs[mesh.indices[tri_id * 3 + 2]]
+          
+          // Compute triangle normal
+          let e1x = v1.x - v0.x
+          let e1y = v1.y - v0.y
+          let e1z = v1.z - v0.z
+          let e2x = v2.x - v0.x
+          let e2y = v2.y - v0.y
+          let e2z = v2.z - v0.z
+          
+          let nx = e1y * e2z - e1z * e2y
+          let ny = e1z * e2x - e1x * e2z
+          let nz = e1x * e2y - e1y * e2x
+          let n_dot_n = nx * nx + ny * ny + nz * nz
+          
+          let z = i / (grid.width * grid.height)
+          let y = (i / grid.width) % grid.height
+          let x = i % grid.width
+          
+          let vx = x.to_double() * grid.voxel_size
+          let vy = y.to_double() * grid.voxel_size
+          let vz = z.to_double() * grid.voxel_size
+          
+          // For each of the 8 corners of the voxel
+          for c = 0; c < 8; c = c + 1 {
+            let cx = vx + (if (c.land(1)) != 0 { grid.voxel_size } else { 0.0 })
+            let cy = vy + (if (c.land(2)) != 0 { grid.voxel_size } else { 0.0 })
+            let cz = vz + (if (c.land(4)) != 0 { grid.voxel_size } else { 0.0 })
+            
+            let mut final_u = 0.0
+            let mut final_v = 0.0
+            
+            if n_dot_n > 0.0000001 {
+              // Project point to triangle plane
+              let px = cx - v0.x
+              let py = cy - v0.y
+              let pz = cz - v0.z
+              
+              let dist = (px * nx + py * ny + pz * nz) / n_dot_n
+              
+              let p_proj_x = cx - dist * nx
+              let p_proj_y = cy - dist * ny
+              let p_proj_z = cz - dist * nz
+              
+              // Barycentric coordinates
+              let w0x = e1x; let w0y = e1y; let w0z = e1z
+              let w1x = e2x; let w1y = e2y; let w1z = e2z
+              let w2x = p_proj_x - v0.x
+              let w2y = p_proj_y - v0.y
+              let w2z = p_proj_z - v0.z
+              
+              let d00 = w0x*w0x + w0y*w0y + w0z*w0z
+              let d01 = w0x*w1x + w0y*w1y + w0z*w1z
+              let d11 = w1x*w1x + w1y*w1y + w1z*w1z
+              let d20 = w2x*w0x + w2y*w0y + w2z*w0z
+              let d21 = w2x*w1x + w2y*w1y + w2z*w1z
+              
+              let denom = d00 * d11 - d01 * d01
+              if denom > 0.0000001 {
+                let v_bary = (d11 * d20 - d01 * d21) / denom
+                let w_bary = (d00 * d21 - d01 * d20) / denom
+                let u_bary = 1.0 - v_bary - w_bary
+                
+                final_u = u_bary * uv0.u + v_bary * uv1.u + w_bary * uv2.u
+                final_v = u_bary * uv0.v + v_bary * uv1.v + w_bary * uv2.v
+              }
+            }
+            
+            write_f32(uv_offset, final_u)
+            write_f32(uv_offset + 4, final_v)
+            uv_offset = uv_offset + 8
+          }
+        }
+      }
+    }
+    None => ()
   }
   
   // Copy to bytes

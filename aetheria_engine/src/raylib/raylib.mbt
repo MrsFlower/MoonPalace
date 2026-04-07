@@ -252,9 +252,14 @@ extern "C" fn draw_chunk_model_wrapper(index: Int, x: Double, y: Double, z: Doub
 extern "C" fn load_custom_chunk_wrapper(index: Int) = "load_custom_chunk"
 
 extern "C" fn draw_custom_chunk_wrapper() = "draw_custom_chunk"
+extern "C" fn bind_atlas_to_chunk_wrapper() = "bind_atlas_to_chunk"
 
 pub fn draw_custom_chunk() -> Unit {
   draw_custom_chunk_wrapper()
+}
+
+pub fn bind_atlas_to_chunk() -> Unit {
+  bind_atlas_to_chunk_wrapper()
 }
 
 pub fn draw_chunk_model(index: Int, x: Double, y: Double, z: Double, scale: Double) -> Unit {

@@ -26,6 +26,11 @@ fn main {
       // 渐进式加载模型 Chunks
       let path = "../aetheria_voxelizer/plaza.chunk"
       @raylib.load_custom_chunk(0, path)
+      
+      let texture_path = "../aetheria_engine/assets/optimized_plaza_texture.png"
+      @raylib.load_texture_atlas(texture_path)
+      @raylib.bind_atlas_to_chunk()
+      
       current_chunk_to_load = current_chunk_to_load + 1
       
       // 画一个平滑的 Loading 界面，由于只加载了一个，界面更新率能维持在几十帧以上

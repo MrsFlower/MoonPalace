@@ -306,7 +306,9 @@ typedef struct VoxelChunk {
     int width;
     int height;
     int depth;
+    int has_uv;
     unsigned char* data; // 1 for solid, 0 for empty
+    float* uvs; // 16 floats per solid voxel
     Model instanced_model; // Used for instanced rendering
 } VoxelChunk;
 
@@ -322,20 +324,22 @@ void build_chunk_model() {
     int depth = loaded_chunk.depth;
     float v = 0.5f;
     
+    int total_voxels = loaded_chunk.width * loaded_chunk.height * loaded_chunk.depth;
+    
     // 1. Count exposed faces for memory allocation
     int face_count = 0;
-    for (int y = 0; y < height; y++) {
-        for (int z = 0; z < depth; z++) {
-            for (int x = 0; x < width; x++) {
-                if (loaded_chunk.data[x + y*width + z*width*height] == 0) continue;
-                if (y + 1 >= height || loaded_chunk.data[x + (y+1)*width + z*width*height] == 0) face_count++;
-                if (y - 1 < 0 || loaded_chunk.data[x + (y-1)*width + z*width*height] == 0) face_count++;
-                if (z + 1 >= depth || loaded_chunk.data[x + y*width + (z+1)*width*height] == 0) face_count++;
-                if (z - 1 < 0 || loaded_chunk.data[x + y*width + (z-1)*width*height] == 0) face_count++;
-                if (x + 1 >= width || loaded_chunk.data[(x+1) + y*width + z*width*height] == 0) face_count++;
-                if (x - 1 < 0 || loaded_chunk.data[(x-1) + y*width + z*width*height] == 0) face_count++;
-            }
-        }
+    for (int i = 0; i < total_voxels; i++) {
+        if (loaded_chunk.data[i] == 0) continue;
+        int z = i / (width * height);
+        int y = (i / width) % height;
+        int x = i % width;
+        
+        if (y + 1 >= height || loaded_chunk.data[x + (y+1)*width + z*width*height] == 0) face_count++;
+        if (y - 1 < 0 || loaded_chunk.data[x + (y-1)*width + z*width*height] == 0) face_count++;
+        if (z + 1 >= depth || loaded_chunk.data[x + y*width + (z+1)*width*height] == 0) face_count++;
+        if (z - 1 < 0 || loaded_chunk.data[x + y*width + (z-1)*width*height] == 0) face_count++;
+        if (x + 1 >= width || loaded_chunk.data[(x+1) + y*width + z*width*height] == 0) face_count++;
+        if (x - 1 < 0 || loaded_chunk.data[(x-1) + y*width + z*width*height] == 0) face_count++;
     }
     
     if (face_count == 0) return;
@@ -347,74 +351,121 @@ void build_chunk_model() {
     mesh.vertices = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float));
     mesh.normals = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float));
     mesh.colors = (unsigned char *)MemAlloc(mesh.vertexCount * 4 * sizeof(unsigned char));
+    if (loaded_chunk.has_uv) {
+        mesh.texcoords = (float *)MemAlloc(mesh.vertexCount * 2 * sizeof(float));
+    }
     
     int v_idx = 0;
     int n_idx = 0;
     int c_idx = 0;
+    int t_idx = 0;
     
     float offset_x = -(width * v) / 2.0f;
     float offset_y = 0.0f;
     float offset_z = -(depth * v) / 2.0f;
     
     // Macro to add 2 triangles (6 vertices) for a Quad
-    #define ADD_VERTEX(vx, vy, vz, nx, ny, nz, r, g, b, a) \
+    #define ADD_VERTEX(vx, vy, vz, nx, ny, nz, r, g, b, a, u, v_coord) \
         mesh.vertices[v_idx++] = (vx); mesh.vertices[v_idx++] = (vy); mesh.vertices[v_idx++] = (vz); \
         mesh.normals[n_idx++] = (nx); mesh.normals[n_idx++] = (ny); mesh.normals[n_idx++] = (nz); \
-        mesh.colors[c_idx++] = (r); mesh.colors[c_idx++] = (g); mesh.colors[c_idx++] = (b); mesh.colors[c_idx++] = (a);
+        mesh.colors[c_idx++] = (r); mesh.colors[c_idx++] = (g); mesh.colors[c_idx++] = (b); mesh.colors[c_idx++] = (a); \
+        if (loaded_chunk.has_uv) { mesh.texcoords[t_idx++] = (u); mesh.texcoords[t_idx++] = (v_coord); }
     
-    #define ADD_QUAD(v1x,v1y,v1z, v2x,v2y,v2z, v3x,v3y,v3z, v4x,v4y,v4z, nx,ny,nz, r,g,b) \
-        ADD_VERTEX(v1x,v1y,v1z, nx,ny,nz, r,g,b,255) \
-        ADD_VERTEX(v2x,v2y,v2z, nx,ny,nz, r,g,b,255) \
-        ADD_VERTEX(v3x,v3y,v3z, nx,ny,nz, r,g,b,255) \
-        ADD_VERTEX(v1x,v1y,v1z, nx,ny,nz, r,g,b,255) \
-        ADD_VERTEX(v3x,v3y,v3z, nx,ny,nz, r,g,b,255) \
-        ADD_VERTEX(v4x,v4y,v4z, nx,ny,nz, r,g,b,255)
+    #define ADD_QUAD(v1x,v1y,v1z, u1,v1, v2x,v2y,v2z, u2,v2, v3x,v3y,v3z, u3,v3, v4x,v4y,v4z, u4,v4, nx,ny,nz, r,g,b) \
+        ADD_VERTEX(v1x,v1y,v1z, nx,ny,nz, r,g,b,255, u1,v1) \
+        ADD_VERTEX(v2x,v2y,v2z, nx,ny,nz, r,g,b,255, u2,v2) \
+        ADD_VERTEX(v3x,v3y,v3z, nx,ny,nz, r,g,b,255, u3,v3) \
+        ADD_VERTEX(v1x,v1y,v1z, nx,ny,nz, r,g,b,255, u1,v1) \
+        ADD_VERTEX(v3x,v3y,v3z, nx,ny,nz, r,g,b,255, u3,v3) \
+        ADD_VERTEX(v4x,v4y,v4z, nx,ny,nz, r,g,b,255, u4,v4)
         
-    for (int y = 0; y < height; y++) {
-        for (int z = 0; z < depth; z++) {
-            for (int x = 0; x < width; x++) {
-                if (loaded_chunk.data[x + y*width + z*width*height] == 0) continue;
-                
-                float px = offset_x + x * v;
-                float py = offset_y + y * v;
-                float pz = offset_z + z * v;
-                
-                // Simple height-based grayscale coloring for testing
-                unsigned char cr = 200 - (y * 2);
-                unsigned char cg = 200 - (y * 2);
-                unsigned char cb = 200 - (y * 2);
-                if (y * 2 > 150) { cr = 50; cg = 50; cb = 50; }
-                
-                // Top (+Y)
-                if (y + 1 >= height || loaded_chunk.data[x + (y+1)*width + z*width*height] == 0) {
-                    unsigned char c = (unsigned char)(cr + 20); if(c>255) c=255;
-                    ADD_QUAD(px,py+v,pz, px,py+v,pz+v, px+v,py+v,pz+v, px+v,py+v,pz, 0,1,0, c,c,c);
-                }
-                // Bottom (-Y)
-                if (y - 1 < 0 || loaded_chunk.data[x + (y-1)*width + z*width*height] == 0) {
-                    unsigned char c = (unsigned char)(cr - 40); if(cr<40) c=0;
-                    ADD_QUAD(px,py,pz+v, px,py,pz, px+v,py,pz, px+v,py,pz+v, 0,-1,0, c,c,c);
-                }
-                // Front (+Z)
-                if (z + 1 >= depth || loaded_chunk.data[x + y*width + (z+1)*width*height] == 0) {
-                    unsigned char c = (unsigned char)(cr - 10); if(cr<10) c=0;
-                    ADD_QUAD(px,py,pz+v, px+v,py,pz+v, px+v,py+v,pz+v, px,py+v,pz+v, 0,0,1, c,c,c);
-                }
-                // Back (-Z)
-                if (z - 1 < 0 || loaded_chunk.data[x + y*width + (z-1)*width*height] == 0) {
-                    unsigned char c = (unsigned char)(cr - 10); if(cr<10) c=0;
-                    ADD_QUAD(px+v,py,pz, px,py,pz, px,py+v,pz, px+v,py+v,pz, 0,0,-1, c,c,c);
-                }
-                // Right (+X)
-                if (x + 1 >= width || loaded_chunk.data[(x+1) + y*width + z*width*height] == 0) {
-                    ADD_QUAD(px+v,py,pz+v, px+v,py,pz, px+v,py+v,pz, px+v,py+v,pz+v, 1,0,0, cr,cr,cr);
-                }
-                // Left (-X)
-                if (x - 1 < 0 || loaded_chunk.data[(x-1) + y*width + z*width*height] == 0) {
-                    ADD_QUAD(px,py,pz, px,py,pz+v, px,py+v,pz+v, px,py+v,pz, -1,0,0, cr,cr,cr);
-                }
-            }
+    int solid_idx = 0;
+    for (int i = 0; i < total_voxels; i++) {
+        if (loaded_chunk.data[i] == 0) continue;
+        int z = i / (width * height);
+        int y = (i / width) % height;
+        int x = i % width;
+        
+        float px = offset_x + x * v;
+        float py = offset_y + y * v;
+        float pz = offset_z + z * v;
+        
+        // Simple height-based grayscale coloring for testing
+        unsigned char cr = 200 - (y * 2);
+        unsigned char cg = 200 - (y * 2);
+        unsigned char cb = 200 - (y * 2);
+        if (y * 2 > 150) { cr = 50; cg = 50; cb = 50; }
+        
+        if (loaded_chunk.has_uv) {
+            cr = 255; cg = 255; cb = 255; // White base color if textured
         }
+        
+        // UV array indexing
+        float* uv = loaded_chunk.has_uv ? &loaded_chunk.uvs[solid_idx * 16] : NULL;
+        
+        // Corner mapping:
+        // 0: (0,0,0)  1: (1,0,0)  2: (0,1,0)  3: (1,1,0)
+        // 4: (0,0,1)  5: (1,0,1)  6: (0,1,1)  7: (1,1,1)
+        #define GET_U(c) (uv ? uv[(c)*2] : 0.0f)
+        #define GET_V(c) (uv ? uv[(c)*2+1] : 0.0f)
+        
+        // Top (+Y)
+        if (y + 1 >= height || loaded_chunk.data[x + (y+1)*width + z*width*height] == 0) {
+            unsigned char c = (unsigned char)(cr + 20); if(c>255) c=255;
+            if (loaded_chunk.has_uv) c = 255;
+            ADD_QUAD(px,py+v,pz,   GET_U(2),GET_V(2),
+                     px,py+v,pz+v, GET_U(6),GET_V(6),
+                     px+v,py+v,pz+v, GET_U(7),GET_V(7),
+                     px+v,py+v,pz, GET_U(3),GET_V(3),
+                     0,1,0, c,c,c);
+        }
+        // Bottom (-Y)
+        if (y - 1 < 0 || loaded_chunk.data[x + (y-1)*width + z*width*height] == 0) {
+            unsigned char c = (unsigned char)(cr - 40); if(cr<40) c=0;
+            if (loaded_chunk.has_uv) c = 255;
+            ADD_QUAD(px,py,pz+v, GET_U(4),GET_V(4),
+                     px,py,pz,   GET_U(0),GET_V(0),
+                     px+v,py,pz, GET_U(1),GET_V(1),
+                     px+v,py,pz+v, GET_U(5),GET_V(5),
+                     0,-1,0, c,c,c);
+        }
+        // Front (+Z)
+        if (z + 1 >= depth || loaded_chunk.data[x + y*width + (z+1)*width*height] == 0) {
+            unsigned char c = (unsigned char)(cr - 10); if(cr<10) c=0;
+            if (loaded_chunk.has_uv) c = 255;
+            ADD_QUAD(px,py,pz+v,     GET_U(4),GET_V(4),
+                     px+v,py,pz+v,   GET_U(5),GET_V(5),
+                     px+v,py+v,pz+v, GET_U(7),GET_V(7),
+                     px,py+v,pz+v,   GET_U(6),GET_V(6),
+                     0,0,1, c,c,c);
+        }
+        // Back (-Z)
+        if (z - 1 < 0 || loaded_chunk.data[x + y*width + (z-1)*width*height] == 0) {
+            unsigned char c = (unsigned char)(cr - 10); if(cr<10) c=0;
+            if (loaded_chunk.has_uv) c = 255;
+            ADD_QUAD(px+v,py,pz,   GET_U(1),GET_V(1),
+                     px,py,pz,     GET_U(0),GET_V(0),
+                     px,py+v,pz,   GET_U(2),GET_V(2),
+                     px+v,py+v,pz, GET_U(3),GET_V(3),
+                     0,0,-1, c,c,c);
+        }
+        // Right (+X)
+        if (x + 1 >= width || loaded_chunk.data[(x+1) + y*width + z*width*height] == 0) {
+            ADD_QUAD(px+v,py,pz+v,   GET_U(5),GET_V(5),
+                     px+v,py,pz,     GET_U(1),GET_V(1),
+                     px+v,py+v,pz,   GET_U(3),GET_V(3),
+                     px+v,py+v,pz+v, GET_U(7),GET_V(7),
+                     1,0,0, cr,cr,cr);
+        }
+        // Left (-X)
+        if (x - 1 < 0 || loaded_chunk.data[(x-1) + y*width + z*width*height] == 0) {
+            ADD_QUAD(px,py,pz,     GET_U(0),GET_V(0),
+                     px,py,pz+v,   GET_U(4),GET_V(4),
+                     px,py+v,pz+v, GET_U(6),GET_V(6),
+                     px,py+v,pz,   GET_U(2),GET_V(2),
+                     -1,0,0, cr,cr,cr);
+        }
+        solid_idx++;
     }
     
     UploadMesh(&mesh, false);
@@ -462,6 +513,12 @@ void load_custom_chunk(int index) {
     
     // Automatically build the optimized mesh once loaded
     build_chunk_model();
+}
+
+void bind_atlas_to_chunk() {
+    if (chunk_model.meshCount > 0 && current_atlas.id != 0) {
+        chunk_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = current_atlas;
+    }
 }
 
 void draw_custom_chunk() {
