@@ -163,11 +163,19 @@ pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
       if self.player_velocity_y < 0.0 {
         // 落地
         self.is_grounded = true
-        // 对齐到地面的体素表面
-        self.player_pos = { x: self.player_pos.x, y: @math.floor(self.player_pos.y) + 0.5, z: self.player_pos.z }
+        // 玩家脚底高度
+        let bottom_y = next_y - 0.49
+        // 计算撞到的体素索引，并反推出体素的顶部高度 (每个方块高 0.5)
+        let voxel_y_index = @math.floor(bottom_y / 0.5)
+        let voxel_top = (voxel_y_index + 1.0) * 0.5
+        // 将玩家中心完美对齐到地面上，不再上下跳动
+        self.player_pos = { x: self.player_pos.x, y: voxel_top + 0.5, z: self.player_pos.z }
       } else {
         // 头顶撞到天花板
-        self.player_pos = { x: self.player_pos.x, y: @math.ceil(self.player_pos.y) - 0.5, z: self.player_pos.z }
+        let top_y = next_y + 0.49
+        let voxel_y_index = @math.floor(top_y / 0.5)
+        let voxel_bottom = voxel_y_index * 0.5
+        self.player_pos = { x: self.player_pos.x, y: voxel_bottom - 0.5, z: self.player_pos.z }
       }
       self.player_velocity_y = 0.0
     } else {
