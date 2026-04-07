@@ -253,6 +253,11 @@ extern "C" fn load_custom_chunk_wrapper(index: Int) = "load_custom_chunk"
 
 extern "C" fn draw_custom_chunk_wrapper() = "draw_custom_chunk"
 extern "C" fn bind_atlas_to_chunk_wrapper() = "bind_atlas_to_chunk"
+extern "C" fn get_voxel_at_wrapper(x: Double, y: Double, z: Double) -> Int = "get_voxel_at_wrapper"
+
+pub fn get_voxel_at(x: Double, y: Double, z: Double) -> Bool {
+  get_voxel_at_wrapper(x, y, z) != 0
+}
 
 pub fn draw_custom_chunk() -> Unit {
   draw_custom_chunk_wrapper()

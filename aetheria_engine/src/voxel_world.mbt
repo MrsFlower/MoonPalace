@@ -63,34 +63,29 @@ pub fn VoxelWorld::load_from_json(json_str: String) -> Result[VoxelWorld, String
 // 检查给定的连续浮点坐标 (通常是玩家的 AABB) 是否与任何 Solid 方块碰撞
 // 这里我们做一个非常简单的假设：玩家 AABB 是 1x1x1，中心在 (px, py, pz)
 pub fn VoxelWorld::check_collision(self: VoxelWorld, px: Double, py: Double, pz: Double) -> Bool {
-  let player_size = 0.8 // 稍微小于 1.0，留点冗余防止卡墙
+  let player_size = 0.6
   
-  for v in self.voxels {
-    // 基础的 AABB 碰撞检测
-    // 方块的中心点假设在其坐标的 (x+0.5, y+0.5, z+0.5) 或者就是其本身（取决于渲染锚点）
-    // 为了简单，假设方块锚点在左下角 (v.x, v.y, v.z)，尺寸 1x1x1
-    let vx_min = v.x.to_double() - 0.5
-    let vx_max = v.x.to_double() + 0.5
-    let vy_min = v.y.to_double() - 0.5
-    let vy_max = v.y.to_double() + 0.5
-    let vz_min = v.z.to_double() - 0.5
-    let vz_max = v.z.to_double() + 0.5
-    
-    let px_min = px - player_size / 2.0
-    let px_max = px + player_size / 2.0
-    let py_min = py - player_size / 2.0
-    let py_max = py + player_size / 2.0
-    let pz_min = pz - player_size / 2.0
-    let pz_max = pz + player_size / 2.0
-    
-    let overlap_x = px_min < vx_max && px_max > vx_min
-    let overlap_y = py_min < vy_max && py_max > vy_min
-    let overlap_z = pz_min < vz_max && pz_max > vz_min
-    
-    if overlap_x && overlap_y && overlap_z {
-      return true // 发生碰撞
-    }
-  }
+  // 检查玩家包围盒周围的几个关键点即可
+  // 中心点
+  if @raylib.get_voxel_at(px, py, pz) { return true }
+  // 脚底点
+  if @raylib.get_voxel_at(px, py - 0.5, pz) { return true }
+  // 头部点
+  if @raylib.get_voxel_at(px, py + 0.5, pz) { return true }
+  
+  // 包围盒 4 个底角
+  let half_size = player_size / 2.0
+  if @raylib.get_voxel_at(px - half_size, py - 0.5, pz - half_size) { return true }
+  if @raylib.get_voxel_at(px + half_size, py - 0.5, pz - half_size) { return true }
+  if @raylib.get_voxel_at(px - half_size, py - 0.5, pz + half_size) { return true }
+  if @raylib.get_voxel_at(px + half_size, py - 0.5, pz + half_size) { return true }
+  
+  // 包围盒 4 个顶角
+  if @raylib.get_voxel_at(px - half_size, py + 0.5, pz - half_size) { return true }
+  if @raylib.get_voxel_at(px + half_size, py + 0.5, pz - half_size) { return true }
+  if @raylib.get_voxel_at(px - half_size, py + 0.5, pz + half_size) { return true }
+  if @raylib.get_voxel_at(px + half_size, py + 0.5, pz + half_size) { return true }
+  
   false
 }
 

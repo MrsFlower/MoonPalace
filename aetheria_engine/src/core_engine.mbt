@@ -16,6 +16,8 @@ pub struct Engine {
   mut player_yaw : Double
   mut player_pitch : Double
   mut player_pos : Vector3
+  mut player_velocity_y : Double
+  mut is_grounded : Bool
   world : VoxelWorld
   materials : Map[Int, UVRect]
   chunk_count : Int
@@ -60,7 +62,10 @@ pub fn Engine::new() -> Engine {
     ui: UIManager::new(),
     player_yaw: 0.0,
     player_pitch: 0.0,
-    player_pos: { x: 0.0, y: 1.0, z: 0.0 },
+    // 初始位置设置在一个相对安全的开阔地（如广场中心上方），让他自然掉落到地面
+    player_pos: { x: 0.0, y: 10.0, z: -10.0 }, 
+    player_velocity_y: 0.0,
+    is_grounded: false,
     world,
     materials,
     chunk_count
@@ -137,8 +142,41 @@ pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
   // 仅在漫游状态下允许移动
   if self.state == Roam && self.camera_mode == 0 {
     let speed = 0.1
+    let dt = 1.0 / 60.0 // 固定时间步长（简化的物理引擎）
+    let gravity = -9.8
+    let jump_force = 4.5
     
-    // 如果没有输入，就不计算移动
+    // 跳跃
+    if @raylib.is_key_pressed(@raylib.key_space) && self.is_grounded {
+      self.player_velocity_y = jump_force
+      self.is_grounded = false
+    }
+    
+    // 应用重力
+    self.player_velocity_y += gravity * dt
+    
+    // 先计算 Y 轴（垂直方向）的移动和碰撞
+    let next_y = self.player_pos.y + self.player_velocity_y * dt
+    
+    // Y 轴碰撞检测
+    if self.world.check_collision(self.player_pos.x, next_y, self.player_pos.z) {
+      if self.player_velocity_y < 0.0 {
+        // 落地
+        self.is_grounded = true
+        // 对齐到地面的体素表面
+        self.player_pos = { x: self.player_pos.x, y: @math.floor(self.player_pos.y) + 0.5, z: self.player_pos.z }
+      } else {
+        // 头顶撞到天花板
+        self.player_pos = { x: self.player_pos.x, y: @math.ceil(self.player_pos.y) - 0.5, z: self.player_pos.z }
+      }
+      self.player_velocity_y = 0.0
+    } else {
+      // 在空中
+      self.player_pos = { x: self.player_pos.x, y: next_y, z: self.player_pos.z }
+      self.is_grounded = false
+    }
+    
+    // 然后计算 X/Z 轴（水平方向）的移动
     if input_x != 0.0 || input_z != 0.0 {
       let forward_x = -@math.sin(self.player_yaw)
       let forward_z = -@math.cos(self.player_yaw)
@@ -149,17 +187,15 @@ pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
       let move_x = (right_x * input_x + forward_x * input_z) * speed
       let move_z = (right_z * input_x + forward_z * input_z) * speed
       
+      // 分别在 X 和 Z 方向做碰撞检测 (Slide along walls)
       let next_x = self.player_pos.x + move_x
+      if not(self.world.check_collision(next_x, self.player_pos.y, self.player_pos.z)) {
+        self.player_pos = { x: next_x, y: self.player_pos.y, z: self.player_pos.z }
+      }
+      
       let next_z = self.player_pos.z + move_z
-  
-      // 碰撞检测
-      if self.world.check_collision(next_x, self.player_pos.y, next_z) {
-        if (next_x - 6.0)*(next_x - 6.0) + (next_z - 0.0)*(next_z - 0.0) < 1.0 {
-          self.state = Dialog
-          self.ui.show_dialog("You bumped into a special voxel!")
-        }
-      } else {
-        self.player_pos = { x: next_x, y: self.player_pos.y, z: next_z }
+      if not(self.world.check_collision(self.player_pos.x, self.player_pos.y, next_z)) {
+        self.player_pos = { x: self.player_pos.x, y: self.player_pos.y, z: next_z }
       }
     }
   }

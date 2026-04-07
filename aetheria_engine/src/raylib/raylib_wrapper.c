@@ -545,6 +545,30 @@ void draw_custom_chunk() {
     }
 }
 
+int32_t get_voxel_at_wrapper(double x, double y, double z) {
+    if (loaded_chunk.data == NULL) return 0;
+    
+    // Chunk origin logic from build_chunk_model:
+    float v = 0.5f;
+    float offset_x = -(loaded_chunk.width * v) / 2.0f;
+    float offset_y = 0.0f;
+    float offset_z = -(loaded_chunk.depth * v) / 2.0f;
+    
+    // Convert world space coordinates back to grid indices
+    int grid_x = (int)round((x - offset_x) / v);
+    int grid_y = (int)round((y - offset_y) / v);
+    int grid_z = (int)round((z - offset_z) / v);
+    
+    if (grid_x < 0 || grid_x >= loaded_chunk.width ||
+        grid_y < 0 || grid_y >= loaded_chunk.height ||
+        grid_z < 0 || grid_z >= loaded_chunk.depth) {
+        return 0; // Out of bounds is empty (air)
+    }
+    
+    int index = grid_x + grid_y * loaded_chunk.width + grid_z * loaded_chunk.width * loaded_chunk.height;
+    return loaded_chunk.data[index] != 0 ? 1 : 0;
+}
+
 void debug_global_model_wrapper() {
 
     printf("[DEBUG] debug_global_model_wrapper called.\n");
