@@ -357,53 +357,54 @@ pub fn export_chunk(grid: VoxelGrid, mesh_opt: Mesh?, path: String) -> Unit {
           let vy = y.to_double() * grid.voxel_size
           let vz = z.to_double() * grid.voxel_size
           
-          // For each of the 8 corners of the voxel
-          for c = 0; c < 8; c = c + 1 {
-            let cx = vx + (if (c.land(1)) != 0 { grid.voxel_size } else { 0.0 })
-            let cy = vy + (if (c.land(2)) != 0 { grid.voxel_size } else { 0.0 })
-            let cz = vz + (if (c.land(4)) != 0 { grid.voxel_size } else { 0.0 })
+          // Calculate center UV of the voxel
+          let cx = vx + grid.voxel_size * 0.5
+          let cy = vy + grid.voxel_size * 0.5
+          let cz = vz + grid.voxel_size * 0.5
+          
+          let mut center_u = 0.0
+          let mut center_v = 0.0
+          
+          if n_dot_n > 0.0000001 {
+            // Project point to triangle plane
+            let px = cx - v0.x
+            let py = cy - v0.y
+            let pz = cz - v0.z
             
-            let mut final_u = 0.0
-            let mut final_v = 0.0
+            let dist = (px * nx + py * ny + pz * nz) / n_dot_n
             
-            if n_dot_n > 0.0000001 {
-              // Project point to triangle plane
-              let px = cx - v0.x
-              let py = cy - v0.y
-              let pz = cz - v0.z
+            let p_proj_x = cx - dist * nx
+            let p_proj_y = cy - dist * ny
+            let p_proj_z = cz - dist * nz
+            
+            // Barycentric coordinates
+            let w0x = e1x; let w0y = e1y; let w0z = e1z
+            let w1x = e2x; let w1y = e2y; let w1z = e2z
+            let w2x = p_proj_x - v0.x
+            let w2y = p_proj_y - v0.y
+            let w2z = p_proj_z - v0.z
+            
+            let d00 = w0x*w0x + w0y*w0y + w0z*w0z
+            let d01 = w0x*w1x + w0y*w1y + w0z*w1z
+            let d11 = w1x*w1x + w1y*w1y + w1z*w1z
+            let d20 = w2x*w0x + w2y*w0y + w2z*w0z
+            let d21 = w2x*w1x + w2y*w1y + w2z*w1z
+            
+            let denom = d00 * d11 - d01 * d01
+            if denom > 0.0000001 {
+              let v_bary = (d11 * d20 - d01 * d21) / denom
+              let w_bary = (d00 * d21 - d01 * d20) / denom
+              let u_bary = 1.0 - v_bary - w_bary
               
-              let dist = (px * nx + py * ny + pz * nz) / n_dot_n
-              
-              let p_proj_x = cx - dist * nx
-              let p_proj_y = cy - dist * ny
-              let p_proj_z = cz - dist * nz
-              
-              // Barycentric coordinates
-              let w0x = e1x; let w0y = e1y; let w0z = e1z
-              let w1x = e2x; let w1y = e2y; let w1z = e2z
-              let w2x = p_proj_x - v0.x
-              let w2y = p_proj_y - v0.y
-              let w2z = p_proj_z - v0.z
-              
-              let d00 = w0x*w0x + w0y*w0y + w0z*w0z
-              let d01 = w0x*w1x + w0y*w1y + w0z*w1z
-              let d11 = w1x*w1x + w1y*w1y + w1z*w1z
-              let d20 = w2x*w0x + w2y*w0y + w2z*w0z
-              let d21 = w2x*w1x + w2y*w1y + w2z*w1z
-              
-              let denom = d00 * d11 - d01 * d01
-              if denom > 0.0000001 {
-                let v_bary = (d11 * d20 - d01 * d21) / denom
-                let w_bary = (d00 * d21 - d01 * d20) / denom
-                let u_bary = 1.0 - v_bary - w_bary
-                
-                final_u = u_bary * uv0.u + v_bary * uv1.u + w_bary * uv2.u
-                final_v = u_bary * uv0.v + v_bary * uv1.v + w_bary * uv2.v
-              }
+              center_u = u_bary * uv0.u + v_bary * uv1.u + w_bary * uv2.u
+              center_v = u_bary * uv0.v + v_bary * uv1.v + w_bary * uv2.v
             }
-            
-            write_f32(uv_offset, final_u)
-            write_f32(uv_offset + 4, final_v)
+          }
+          
+          // For each of the 8 corners of the voxel, assign the SAME center UV
+          for c = 0; c < 8; c = c + 1 {
+            write_f32(uv_offset, center_u)
+            write_f32(uv_offset + 4, center_v)
             uv_offset = uv_offset + 8
           }
         }
