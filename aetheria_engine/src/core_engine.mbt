@@ -62,8 +62,8 @@ pub fn Engine::new() -> Engine {
     ui: UIManager::new(),
     player_yaw: 0.0,
     player_pitch: 0.0,
-    // 初始位置设置在一个相对安全的开阔地（如广场中心上方），让他自然掉落到地面
-    player_pos: { x: 0.0, y: 10.0, z: -10.0 }, 
+    // 初始位置设置在非常高的空中，确保玩家不会在生成时卡在建筑物里
+    player_pos: { x: 0.0, y: 50.0, z: 0.0 }, 
     player_velocity_y: 0.0,
     is_grounded: false,
     world,

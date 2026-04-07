@@ -68,23 +68,23 @@ pub fn VoxelWorld::check_collision(self: VoxelWorld, px: Double, py: Double, pz:
   // 检查玩家包围盒周围的几个关键点即可
   // 中心点
   if @raylib.get_voxel_at(px, py, pz) { return true }
-  // 脚底点
-  if @raylib.get_voxel_at(px, py - 0.5, pz) { return true }
+  // 脚底点 (稍微比 0.5 多一点，避免在边缘误差导致不断弹跳)
+  if @raylib.get_voxel_at(px, py - 0.49, pz) { return true }
   // 头部点
-  if @raylib.get_voxel_at(px, py + 0.5, pz) { return true }
+  if @raylib.get_voxel_at(px, py + 0.49, pz) { return true }
   
   // 包围盒 4 个底角
   let half_size = player_size / 2.0
-  if @raylib.get_voxel_at(px - half_size, py - 0.5, pz - half_size) { return true }
-  if @raylib.get_voxel_at(px + half_size, py - 0.5, pz - half_size) { return true }
-  if @raylib.get_voxel_at(px - half_size, py - 0.5, pz + half_size) { return true }
-  if @raylib.get_voxel_at(px + half_size, py - 0.5, pz + half_size) { return true }
+  if @raylib.get_voxel_at(px - half_size, py - 0.49, pz - half_size) { return true }
+  if @raylib.get_voxel_at(px + half_size, py - 0.49, pz - half_size) { return true }
+  if @raylib.get_voxel_at(px - half_size, py - 0.49, pz + half_size) { return true }
+  if @raylib.get_voxel_at(px + half_size, py - 0.49, pz + half_size) { return true }
   
   // 包围盒 4 个顶角
-  if @raylib.get_voxel_at(px - half_size, py + 0.5, pz - half_size) { return true }
-  if @raylib.get_voxel_at(px + half_size, py + 0.5, pz - half_size) { return true }
-  if @raylib.get_voxel_at(px - half_size, py + 0.5, pz + half_size) { return true }
-  if @raylib.get_voxel_at(px + half_size, py + 0.5, pz + half_size) { return true }
+  if @raylib.get_voxel_at(px - half_size, py + 0.49, pz - half_size) { return true }
+  if @raylib.get_voxel_at(px + half_size, py + 0.49, pz - half_size) { return true }
+  if @raylib.get_voxel_at(px - half_size, py + 0.49, pz + half_size) { return true }
+  if @raylib.get_voxel_at(px + half_size, py + 0.49, pz + half_size) { return true }
   
   false
 }
