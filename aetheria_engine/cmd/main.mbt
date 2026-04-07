@@ -63,7 +63,7 @@ fn main {
     engine.update(input_x, input_z)
     
     @raylib.begin_drawing()
-    @raylib.clear_background(30, 30, 40, 255)
+    @raylib.clear_background(135, 206, 235, 255) // Sky Blue to match fog
     
     // Draw 3D Scene
     // Toggle camera control mode
@@ -141,3 +141,6 @@ fn main {
 }
 // force rebuild
 pub fn dummy2() -> Unit { () }
+pub fn dummy3() -> Unit { () }
+pub fn dummy4() -> Unit { () }
+pub fn dummy5() -> Unit { () }

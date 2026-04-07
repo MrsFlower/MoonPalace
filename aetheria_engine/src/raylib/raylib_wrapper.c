@@ -316,6 +316,40 @@ static VoxelChunk loaded_chunk = { 0 };
 static Model chunk_model = { 0 };
 static bool is_chunk_model_ready = false;
 
+const char* fog_vs = 
+"#version 330\n"
+"in vec3 vertexPosition;\n"
+"in vec2 vertexTexCoord;\n"
+"in vec4 vertexColor;\n"
+"out vec2 fragTexCoord;\n"
+"out vec4 fragColor;\n"
+"out float fragDistance;\n"
+"uniform mat4 mvp;\n"
+"void main() {\n"
+"    fragTexCoord = vertexTexCoord;\n"
+"    fragColor = vertexColor;\n"
+"    vec4 pos = mvp * vec4(vertexPosition, 1.0);\n"
+"    fragDistance = pos.z;\n"
+"    gl_Position = pos;\n"
+"}\n";
+
+const char* fog_fs = 
+"#version 330\n"
+"in vec2 fragTexCoord;\n"
+"in vec4 fragColor;\n"
+"in float fragDistance;\n"
+"out vec4 finalColor;\n"
+"uniform sampler2D texture0;\n"
+"void main() {\n"
+"    vec4 texColor = texture(texture0, fragTexCoord);\n"
+"    vec4 color = texColor * fragColor;\n"
+"    float fogDensity = 0.012;\n"
+"    float fogFactor = exp(-pow(fragDistance * fogDensity, 2.0));\n"
+"    fogFactor = clamp(fogFactor, 0.0, 1.0);\n"
+"    vec4 fogColor = vec4(0.53, 0.81, 0.92, 1.0);\n" // Sky Blue (135, 206, 235)
+"    finalColor = mix(fogColor, color, fogFactor);\n"
+"}\n";
+
 void build_chunk_model() {
     if (loaded_chunk.data == NULL) return;
     
@@ -474,6 +508,11 @@ void build_chunk_model() {
     
     UploadMesh(&mesh, false);
     chunk_model = LoadModelFromMesh(mesh);
+    
+    // Apply custom distance fog shader
+    Shader fog_shader = LoadShaderFromMemory(fog_vs, fog_fs);
+    chunk_model.materials[0].shader = fog_shader;
+    
     is_chunk_model_ready = true;
     printf("[VoxelRenderer] Mesh compiled and uploaded to GPU successfully.\n");
 }
