@@ -24,7 +24,7 @@ fn main {
     // 渐进式加载模型 Chunks
     if current_chunk_to_load < chunk_count {
       // 渐进式加载模型 Chunks
-      let path = "../aetheria_voxelizer/mock_pyramid.chunk"
+      let path = "../aetheria_voxelizer/plaza.chunk"
       @raylib.load_custom_chunk(0, path)
       current_chunk_to_load = current_chunk_to_load + 1
       

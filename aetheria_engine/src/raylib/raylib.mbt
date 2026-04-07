@@ -5,6 +5,7 @@ extern "C" fn init_window_wrapper(width: Int, height: Int) = "InitWindow_wrapper
 extern "C" fn window_should_close_wrapper() -> Int = "WindowShouldClose_wrapper"
 extern "C" fn close_window_wrapper() = "CloseWindow_wrapper"
 extern "C" fn set_target_fps_wrapper(fps: Int) = "SetTargetFPS_wrapper"
+extern "C" fn get_frame_time_wrapper() -> Double = "get_frame_time_wrapper"
 extern "C" fn begin_drawing_wrapper() = "BeginDrawing_wrapper"
 extern "C" fn end_drawing_wrapper() = "EndDrawing_wrapper"
 extern "C" fn clear_background_wrapper(r: Int, g: Int, b: Int, a: Int) = "ClearBackground_wrapper"
@@ -100,6 +101,10 @@ pub fn close_window() -> Unit {
 
 pub fn set_target_fps(fps: Int) -> Unit {
   set_target_fps_wrapper(fps)
+}
+
+pub fn get_frame_time() -> Double {
+  get_frame_time_wrapper()
 }
 
 pub fn begin_drawing() -> Unit {

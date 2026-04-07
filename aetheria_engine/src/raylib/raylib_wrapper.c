@@ -160,6 +160,10 @@ double get_mouse_wheel_move_wrapper() {
     return (double)GetMouseWheelMove();
 }
 
+double get_frame_time_wrapper() {
+    return (double)GetFrameTime();
+}
+
 // Camera and Model Wrappers
 static Camera3D current_camera = { 0 };
 

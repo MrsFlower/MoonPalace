@@ -101,10 +101,19 @@ pub fn Engine::update(self: Engine, input_x: Double, input_z: Double) -> Unit {
       let dx = @raylib.get_mouse_delta_x()
       let dy = @raylib.get_mouse_delta_y()
       
+      // 获取帧耗时，用于平滑不同帧率下的移动和鼠标旋转
+      let dt = @raylib.get_frame_time()
+      
+      // 现在的渲染由于去掉了重复贴图和庞大的模型，帧率可能从 60FPS 飙升到了 2000FPS+
+      // 这会导致原本固定步长的鼠标累积旋转量被极度放大（每一帧都算一次 dx * 0.001）
+      // 必须乘以 dt 进行帧率独立化，或者调低基础灵敏度。
+      let base_sensitivity = 0.002
+      let mouse_sensitivity = base_sensitivity * (dt * 60.0) // Normalize around 60fps
+      
       // 如果 dx 或 dy 异常大（比如超过 100 像素），这绝对是操作系统的重置跳变，不是人类手滑，直接忽略
       if dx < 100.0 && dx > -100.0 && dy < 100.0 && dy > -100.0 {
-        self.player_yaw -= dx * 0.001
-        self.player_pitch -= dy * 0.001
+        self.player_yaw -= dx * mouse_sensitivity
+        self.player_pitch -= dy * mouse_sensitivity
         
         // 限制 pitch 角度防止翻转 (-89 to 89 degrees)
         let pi_half = 1.5533
