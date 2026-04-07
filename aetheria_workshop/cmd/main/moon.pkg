@@ -1,0 +1,7 @@
+// import {
+//   "username/aetheria_workshop" @lib,
+// }
+
+options(
+  "is-main": true,
+)
