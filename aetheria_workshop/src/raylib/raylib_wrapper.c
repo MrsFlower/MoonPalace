@@ -7,11 +7,11 @@
 #include <string.h>
 
 // Text buffer to safely receive string data from Moonbit
-char text_buffer[1024];
+char text_buffer[8192];
 int text_len = 0;
 
 void clear_text_buffer() {
-    for (int i = 0; i < 1024; i++) {
+    for (int i = 0; i < 8192; i++) {
         text_buffer[i] = '\0';
     }
     text_len = 0;
@@ -44,7 +44,7 @@ int32_t get_text_buffer_len() {
 }
 
 void append_text_char(int32_t c) {
-    if (text_len < 1023) {
+    if (text_len < 8191) {
         text_buffer[text_len++] = (char)c;
         text_buffer[text_len] = '\0';
     }
@@ -121,9 +121,48 @@ void draw_voxel_faces(double x, double y, double z, double size,
     rlTexCoord2f(u, v); rlVertex3f(xf - s, yf + s, zf - s);
 }
 
+Font app_font;
+int font_loaded = 0;
+
+void load_app_font_wrapper() {
+    int* codepoints = (int*)malloc(40000 * sizeof(int));
+    for (int i = 0; i < 40000; i++) {
+        codepoints[i] = i + 32;
+    }
+    app_font = LoadFontEx("C:\\Windows\\Fonts\\msyh.ttc", 28, codepoints, 40000);
+    if (app_font.texture.id == 0) {
+        app_font = LoadFontEx("C:\\Windows\\Fonts\\simhei.ttf", 28, codepoints, 40000);
+    }
+    free(codepoints);
+    if (app_font.texture.id != 0) {
+        font_loaded = 1;
+    }
+}
+
 void draw_text_from_buffer(int32_t x, int32_t y, int32_t fontSize, int32_t r, int32_t g, int32_t b, int32_t a) {
     Color color = { (unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)a };
-    DrawText(text_buffer, x, y, fontSize, color);
+    if (font_loaded) {
+        DrawTextEx(app_font, text_buffer, (Vector2){(float)x, (float)y}, (float)fontSize, 1.0f, color);
+    } else {
+        DrawText(text_buffer, x, y, fontSize, color);
+    }
+}
+
+int32_t measure_text_wrapper(int32_t fontSize) {
+    if (font_loaded) {
+        Vector2 size = MeasureTextEx(app_font, text_buffer, (float)fontSize, 1.0f);
+        return (int32_t)size.x;
+    } else {
+        return MeasureText(text_buffer, fontSize);
+    }
+}
+
+void begin_scissor_mode_wrapper(int32_t x, int32_t y, int32_t width, int32_t height) {
+    BeginScissorMode(x, y, width, height);
+}
+
+void end_scissor_mode_wrapper() {
+    EndScissorMode();
 }
 
 void DrawFPS_wrapper(int32_t x, int32_t y) {

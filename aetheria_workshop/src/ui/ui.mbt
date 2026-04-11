@@ -110,6 +110,69 @@ pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_ac
   new_text
 }
 
+pub fn draw_text_wrapped(text: String, x: Int, y: Int, width: Int, fontSize: Int, r: Int, g: Int, b: Int, a: Int) -> Int {
+  let mut current_y = y
+  let mut current_line = ""
+  
+  for c in text {
+    if c == '\n' {
+      @raylib.draw_text(current_line, x, current_y, fontSize, r, g, b, a)
+      current_y = current_y + fontSize + 5
+      current_line = ""
+      continue
+    }
+    
+    let test_line = current_line + c.to_string()
+    let w = @raylib.measure_text(test_line, fontSize)
+    if w > width {
+      @raylib.draw_text(current_line, x, current_y, fontSize, r, g, b, a)
+      current_y = current_y + fontSize + 5
+      current_line = c.to_string()
+    } else {
+      current_line = test_line
+    }
+  }
+  
+  if current_line != "" {
+    @raylib.draw_text(current_line, x, current_y, fontSize, r, g, b, a)
+    current_y = current_y + fontSize + 5
+  }
+  
+  current_y - y // Return total height
+}
+
+pub fn draw_scrollable_text_area(text: String, x: Int, y: Int, width: Int, height: Int, scroll_y: Ref[Double]) -> Unit {
+  @raylib.draw_rectangle(x, y, width, height, 245, 245, 245, 255)
+  @raylib.draw_rectangle_lines(x, y, width, height, 150, 150, 150, 255)
+
+  // Handle scroll
+  let mx = @raylib.get_mouse_x()
+  let my = @raylib.get_mouse_y()
+  if mx >= x && mx <= x + width && my >= y && my <= y + height {
+    let wheel = @raylib.get_mouse_wheel_move()
+    scroll_y.val = scroll_y.val - wheel * 30.0
+    if scroll_y.val < 0.0 {
+      scroll_y.val = 0.0
+    }
+  }
+
+  @raylib.begin_scissor_mode(x + 5, y + 5, width - 10, height - 10)
+  
+  let total_h = draw_text_wrapped(text, x + 10, y + 10 - scroll_y.val.to_int(), width - 30, 20, 50, 50, 50, 255)
+  
+  @raylib.end_scissor_mode()
+
+  // Scrollbar handle
+  let max_scroll = if total_h > height { (total_h - height + 20).to_double() } else { 0.0 }
+  if scroll_y.val > max_scroll { scroll_y.val = max_scroll }
+
+  if max_scroll > 0.0 {
+    let bar_h = height * height / total_h
+    let bar_y = y + (scroll_y.val / max_scroll * (height - bar_h).to_double()).to_int()
+    @raylib.draw_rectangle(x + width - 15, bar_y, 10, bar_h, 180, 180, 180, 255)
+  }
+}
+
 pub fn is_clicked(x: Int, y: Int, width: Int, height: Int) -> Bool {
   let mx = @raylib.get_mouse_x()
   let my = @raylib.get_mouse_y()

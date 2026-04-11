@@ -4,6 +4,30 @@
 extern "C" fn init_window_wrapper(width: Int, height: Int) = "InitWindow_wrapper"
 extern "C" fn window_should_close_wrapper() -> Int = "WindowShouldClose_wrapper"
 extern "C" fn close_window_wrapper() = "CloseWindow_wrapper"
+
+extern "C" fn load_app_font_wrapper() = "load_app_font_wrapper"
+pub fn load_app_font() -> Unit {
+  load_app_font_wrapper()
+}
+
+extern "C" fn begin_scissor_mode_wrapper(x: Int, y: Int, width: Int, height: Int) = "begin_scissor_mode_wrapper"
+pub fn begin_scissor_mode(x: Int, y: Int, width: Int, height: Int) -> Unit {
+  begin_scissor_mode_wrapper(x, y, width, height)
+}
+
+extern "C" fn end_scissor_mode_wrapper() = "end_scissor_mode_wrapper"
+pub fn end_scissor_mode() -> Unit {
+  end_scissor_mode_wrapper()
+}
+
+extern "C" fn measure_text_wrapper(fontSize: Int) -> Int = "measure_text_wrapper"
+pub fn measure_text(text: String, fontSize: Int) -> Int {
+  clear_text_buffer()
+  for c in text {
+    append_text_char(c.to_int())
+  }
+  measure_text_wrapper(fontSize)
+}
 extern "C" fn set_target_fps_wrapper(fps: Int) = "SetTargetFPS_wrapper"
 extern "C" fn get_frame_time_wrapper() -> Double = "get_frame_time_wrapper"
 extern "C" fn begin_drawing_wrapper() = "BeginDrawing_wrapper"

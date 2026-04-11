@@ -5,18 +5,21 @@ enum AppState {
   Review
 }
 
-struct App {
+pub(all) struct App {
   mut state: AppState
   mut config: @config.Config
   mut active_textfield: Int
   mut draft_text: String
   mut generated_content: String
-  mut generation_step: Int // 0: Idle, 1: Step A, 2: Step B, 3: Step C, 4: Step D
+  mut generation_step: Int // 0: Test, 1: Step A, 2: Step B, 3: Step C, 4: Step D
+  mut lang: String // "EN" or "ZH"
+  scroll_y: Ref[Double]
 }
 
 fn main {
   @raylib.init_window(1024, 768, "Aetheria3D Workshop")
   @raylib.set_target_fps(60)
+  @raylib.load_app_font()
 
   let app = {
     state: AppState::Settings,
@@ -25,6 +28,8 @@ fn main {
     draft_text: "",
     generated_content: "",
     generation_step: -1,
+    lang: "EN",
+    scroll_y: { val: 0.0 }
   }
 
   while not(@raylib.window_should_close()) {
@@ -45,8 +50,6 @@ fn main {
 }
 
 fn draw_settings(app: App) -> Unit {
-  @raylib.draw_text("Settings", 400, 20, 40, 50, 50, 50, 255)
-
   // Automatically read API Key from env if empty
   if app.config.creative_api.api_key == "" {
     let env_key = @raylib.get_env("CODINGPLAN_API_KEY")
@@ -58,43 +61,49 @@ fn draw_settings(app: App) -> Unit {
     }
   }
 
-  // Creative API (Steps A & B)
-  @raylib.draw_text("Creative API (Steps A & B):", 100, 80, 20, 50, 50, 50, 255)
+  if @ui.draw_button(if app.lang == "EN" { "中" } else { "EN" }, 950, 20, 50, 40) {
+    app.lang = if app.lang == "EN" { "ZH" } else { "EN" }
+  }
 
-  @raylib.draw_text("API Base URL:", 100, 120, 20, 80, 80, 80, 255)
+  @raylib.draw_text(if app.lang == "EN" { "Settings" } else { "设置" }, 400, 20, 40, 50, 50, 50, 255)
+
+  // Creative API (Steps A & B)
+  @raylib.draw_text(if app.lang == "EN" { "Creative API (Steps A & B):" } else { "创造力模型配置 (步骤 A & B):" }, 100, 80, 20, 50, 50, 50, 255)
+
+  @raylib.draw_text(if app.lang == "EN" { "API Base URL:" } else { "API 请求地址:" }, 100, 120, 20, 80, 80, 80, 255)
   if @ui.is_clicked(300, 110, 500, 40) {
     app.active_textfield = 1
   }
   let new_c_api_url = @ui.draw_textbox(app.config.creative_api.api_url, 300, 110, 500, 40, app.active_textfield == 1)
 
-  @raylib.draw_text("API Key:", 100, 170, 20, 80, 80, 80, 255)
+  @raylib.draw_text(if app.lang == "EN" { "API Key:" } else { "API 密钥:" }, 100, 170, 20, 80, 80, 80, 255)
   if @ui.is_clicked(300, 160, 500, 40) {
     app.active_textfield = 2
   }
   let new_c_api_key = @ui.draw_textbox(app.config.creative_api.api_key, 300, 160, 500, 40, app.active_textfield == 2)
 
-  @raylib.draw_text("Model Name:", 100, 220, 20, 80, 80, 80, 255)
+  @raylib.draw_text(if app.lang == "EN" { "Model Name:" } else { "模型名称:" }, 100, 220, 20, 80, 80, 80, 255)
   if @ui.is_clicked(300, 210, 500, 40) {
     app.active_textfield = 3
   }
   let new_c_model_name = @ui.draw_textbox(app.config.creative_api.model_name, 300, 210, 500, 40, app.active_textfield == 3)
 
   // Structural API (Steps C & D)
-  @raylib.draw_text("Structural API (Steps C & D):", 100, 280, 20, 50, 50, 50, 255)
+  @raylib.draw_text(if app.lang == "EN" { "Structural API (Steps C & D):" } else { "结构化模型配置 (步骤 C & D):" }, 100, 280, 20, 50, 50, 50, 255)
 
-  @raylib.draw_text("API Base URL:", 100, 320, 20, 80, 80, 80, 255)
+  @raylib.draw_text(if app.lang == "EN" { "API Base URL:" } else { "API 请求地址:" }, 100, 320, 20, 80, 80, 80, 255)
   if @ui.is_clicked(300, 310, 500, 40) {
     app.active_textfield = 4
   }
   let new_s_api_url = @ui.draw_textbox(app.config.structural_api.api_url, 300, 310, 500, 40, app.active_textfield == 4)
 
-  @raylib.draw_text("API Key:", 100, 370, 20, 80, 80, 80, 255)
+  @raylib.draw_text(if app.lang == "EN" { "API Key:" } else { "API 密钥:" }, 100, 370, 20, 80, 80, 80, 255)
   if @ui.is_clicked(300, 360, 500, 40) {
     app.active_textfield = 5
   }
   let new_s_api_key = @ui.draw_textbox(app.config.structural_api.api_key, 300, 360, 500, 40, app.active_textfield == 5)
 
-  @raylib.draw_text("Model Name:", 100, 420, 20, 80, 80, 80, 255)
+  @raylib.draw_text(if app.lang == "EN" { "Model Name:" } else { "模型名称:" }, 100, 420, 20, 80, 80, 80, 255)
   if @ui.is_clicked(300, 410, 500, 40) {
     app.active_textfield = 6
   }
@@ -177,18 +186,18 @@ fn draw_settings(app: App) -> Unit {
 }
 
 fn draw_drafting(app: App) -> Unit {
-  @raylib.draw_text("Drafting: Write your short story idea", 100, 50, 30, 50, 50, 50, 255)
+  @raylib.draw_text(if app.lang == "EN" { "Drafting: Write your short story idea" } else { "起草：写下你的短篇故事创意" }, 100, 50, 30, 50, 50, 50, 255)
 
   if @ui.is_clicked(100, 100, 800, 200) {
     app.active_textfield = 7
   }
   app.draft_text = @ui.draw_textbox(app.draft_text, 100, 100, 800, 200, app.active_textfield == 7)
 
-  if @ui.draw_button("Back to Settings", 100, 600, 200, 50) {
+  if @ui.draw_button(if app.lang == "EN" { "Back to Settings" } else { "返回设置" }, 100, 600, 200, 50) {
     app.state = AppState::Settings
   }
   
-  if @ui.draw_button("Generate Script", 700, 600, 200, 50) {
+  if @ui.draw_button(if app.lang == "EN" { "Generate Script" } else { "生成世界观" }, 700, 600, 200, 50) {
     app.state = AppState::Generating
     start_generation_step(app, 1)
   }

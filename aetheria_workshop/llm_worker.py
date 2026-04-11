@@ -44,11 +44,31 @@ def main():
         with urllib.request.urlopen(req) as response:
             res_body = response.read().decode("utf-8")
             res_json = json.loads(res_body)
-            
+
             content = res_json["choices"][0]["message"]["content"]
             
+            # Clean up markdown JSON block if present
+            clean_content = content.strip()
+            if clean_content.startswith("```json"):
+                clean_content = clean_content[7:]
+            elif clean_content.startswith("```"):
+                clean_content = clean_content[3:]
+            if clean_content.endswith("```"):
+                clean_content = clean_content[:-3]
+            clean_content = clean_content.strip()
+
+            # Append to log
+            with open("llm_history.log", "a", encoding="utf-8") as log_f:
+                log_f.write("\n" + "="*50 + "\n")
+                log_f.write(f"REQUEST TO: {api_url}\n")
+                log_f.write(json.dumps(payload, ensure_ascii=False, indent=2))
+                log_f.write("\n" + "-"*50 + "\n")
+                log_f.write("RESPONSE:\n")
+                log_f.write(res_body)
+                log_f.write("\n" + "="*50 + "\n")
+
             with open(res_file, "w", encoding="utf-8") as out:
-                json.dump({"status": "success", "content": content}, out, ensure_ascii=False, indent=2)
+                json.dump({"status": "success", "content": clean_content}, out, ensure_ascii=False, indent=2)
 
     except urllib.error.HTTPError as e:
         # Read the error body to get the actual API error message

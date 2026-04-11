@@ -1,6 +1,6 @@
 fn draw_generating(app: App) -> Unit {
-  @raylib.draw_text("Generating Step \{app.generation_step}...", 400, 300, 30, 50, 50, 50, 255)
-  @raylib.draw_text("Please wait...", 400, 350, 20, 100, 100, 100, 255)
+  @raylib.draw_text(if app.lang == "EN" { "Generating Step \{app.generation_step}..." } else { "正在生成步骤 \{app.generation_step}..." }, 400, 300, 30, 50, 50, 50, 255)
+  @raylib.draw_text(if app.lang == "EN" { "Please wait..." } else { "请稍候..." }, 400, 350, 20, 100, 100, 100, 255)
 
   if @fs.path_exists("response.json") {
     try {
@@ -40,42 +40,42 @@ fn draw_generating(app: App) -> Unit {
 }
 
 fn draw_review(app: App) -> Unit {
-  @raylib.draw_text("Review Generation Step \{app.generation_step}", 100, 50, 30, 50, 50, 50, 255)
-  
-  // A simple way to display long text (multiline is not native in basic Raylib draw_text, 
-  // but let's just draw a substring or assume the user checks the console/file for now).
-  // For actual use, we would write a word-wrap function.
-  let preview = if app.generated_content.length() > 500 {
-    app.generated_content[:500].to_string() + "..."
+  let title = if app.lang == "EN" {
+    "Review Generation Step \{app.generation_step}"
   } else {
-    app.generated_content
+    "生成结果预览 (步骤 \{app.generation_step})"
   }
-  
-  @raylib.draw_text(preview, 100, 100, 20, 80, 80, 80, 255)
-  
+  @raylib.draw_text(title, 100, 30, 30, 50, 50, 50, 255)
+
+  // Use the scrollable text area for displaying long text correctly
+  @ui.draw_scrollable_text_area(app.generated_content, 100, 80, 800, 480, app.scroll_y)
+
   if app.generation_step == 0 {
-    if @ui.draw_button("Back to Settings", 100, 600, 200, 50) {
+    if @ui.draw_button(if app.lang == "EN" { "Back to Settings" } else { "返回设置" }, 100, 600, 200, 50) {
       app.state = AppState::Settings
     }
   } else if app.generation_step == 1 {
-    if @ui.draw_button("Proceed to Step B (Story Tree)", 700, 600, 250, 50) {
+    if @ui.draw_button(if app.lang == "EN" { "Proceed to Step B (Story Tree)" } else { "继续: 步骤 B (多结局故事)" }, 650, 600, 300, 50) {   
       app.state = AppState::Generating
+      app.scroll_y.val = 0.0
       start_generation_step(app, 2)
     }
   } else if app.generation_step == 2 {
-    if @ui.draw_button("Proceed to Step C (Script)", 700, 600, 250, 50) {
+    if @ui.draw_button(if app.lang == "EN" { "Proceed to Step C (Script)" } else { "继续: 步骤 C (分镜剧本)" }, 650, 600, 300, 50) {       
       app.state = AppState::Generating
+      app.scroll_y.val = 0.0
       start_generation_step(app, 3)
     }
   } else if app.generation_step == 3 {
-    if @ui.draw_button("Proceed to Step D (JSON)", 700, 600, 250, 50) {
+    if @ui.draw_button(if app.lang == "EN" { "Proceed to Step D (JSON)" } else { "继续: 步骤 D (生成JSON)" }, 650, 600, 300, 50) {
       app.state = AppState::Generating
+      app.scroll_y.val = 0.0
       start_generation_step(app, 4)
     }
   } else if app.generation_step == 4 {
-    if @ui.draw_button("Save Final Story JSON", 700, 600, 250, 50) {
+    if @ui.draw_button(if app.lang == "EN" { "Save Final Story JSON" } else { "保存最终故事JSON" }, 650, 600, 300, 50) {
       try {
-        @fs.write_string_to_file("final_story.json", app.generated_content)
+        @fs.write_string_to_file("final_story.json", app.generated_content)     
         println("Final story saved!")
       } catch {
         _ => println("Failed to save final story")
@@ -83,8 +83,8 @@ fn draw_review(app: App) -> Unit {
       app.state = AppState::Settings
     }
   }
-  
-  if @ui.draw_button("Back to Drafting", 100, 600, 200, 50) {
+
+  if @ui.draw_button(if app.lang == "EN" { "Back to Drafting" } else { "返回起草" }, 100, 600, 200, 50) {
     app.state = AppState::Drafting
   }
 }
