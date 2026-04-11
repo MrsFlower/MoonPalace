@@ -50,6 +50,19 @@ def main():
             with open(res_file, "w", encoding="utf-8") as out:
                 json.dump({"status": "success", "content": content}, out, ensure_ascii=False, indent=2)
 
+    except urllib.error.HTTPError as e:
+        # Read the error body to get the actual API error message
+        error_body = e.read().decode("utf-8")
+        try:
+            error_json = json.loads(error_body)
+            error_msg = error_json.get("error", {}).get("message", error_body)
+        except:
+            error_msg = error_body
+            
+        full_error = f"HTTP {e.code} {e.reason}: {error_msg}"
+        with open(res_file, "w", encoding="utf-8") as out:
+            json.dump({"status": "error", "message": full_error}, out, ensure_ascii=False, indent=2)
+
     except Exception as e:
         with open(res_file, "w", encoding="utf-8") as out:
             json.dump({"status": "error", "message": str(e)}, out, ensure_ascii=False, indent=2)
