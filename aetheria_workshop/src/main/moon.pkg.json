@@ -5,7 +5,9 @@
     "username/aetheria_workshop/src/raylib",
     "username/aetheria_workshop/src/ui",
     "moonbitlang/x/fs",
-    "moonbitlang/core/json"
+    "moonbitlang/core/json",
+    "moonbitlang/core/string",
+    "moonbitlang/core/encoding/utf8"
   ],
   "link": {
     "native": {

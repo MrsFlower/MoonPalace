@@ -10,6 +10,11 @@
 char text_buffer[8192];
 int text_len = 0;
 
+// For C, strings from Moonbit's stringify might not just be raw char bytes if they are UTF16.
+// However, Moonbit's FFI usually passes Int. If we pass Unicode codepoints > 255 to a char array, it overflows.
+// To properly render UTF8 text in Raylib with DrawTextEx, we need to assemble a proper UTF8 string!
+// Or we can just use DrawTextCodepoints from Raylib, which takes an array of ints!
+
 void clear_text_buffer() {
     for (int i = 0; i < 8192; i++) {
         text_buffer[i] = '\0';

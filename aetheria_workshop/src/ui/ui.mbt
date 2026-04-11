@@ -45,6 +45,8 @@ pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_ac
     let mut key = @raylib.get_char_pressed()
     while key > 0 {
       if key >= 32 { // Accept all printable characters including Unicode (Chinese)
+        // Raylib's GetCharPressed returns Unicode codepoints!
+        // We can safely convert it to Moonbit Char
         let c = key.unsafe_to_char()
         new_text = new_text + c.to_string()
       }

@@ -23,8 +23,9 @@ pub fn end_scissor_mode() -> Unit {
 extern "C" fn measure_text_wrapper(fontSize: Int) -> Int = "measure_text_wrapper"
 pub fn measure_text(text: String, fontSize: Int) -> Int {
   clear_text_buffer()
-  for c in text {
-    append_text_char(c.to_int())
+  let bytes = @utf8.encode(text)
+  for i = 0; i < bytes.length(); i = i + 1 {
+    append_text_char(bytes[i].to_int())
   }
   measure_text_wrapper(fontSize)
 }
@@ -57,19 +58,25 @@ extern "C" fn get_text_buffer_len() -> Int = "get_text_buffer_len"
 
 pub fn get_env(name: String) -> String {
   clear_text_buffer()
-  let len = name.length()
+  let bytes = @utf8.encode(name)
+  let len = bytes.length()
   for i = 0; i < len; i = i + 1 {
-    append_text_char(name[i].to_int())
+    append_text_char(bytes[i].to_int())
   }
   
   get_env_wrapper()
   
   let out_len = get_text_buffer_len()
-  let mut s = ""
+  let ba = FixedArray::make(out_len, b'\x00')
   for i = 0; i < out_len; i = i + 1 {
-    s = s + get_text_buffer_char(i).unsafe_to_char().to_string()
+    ba[i] = get_text_buffer_char(i).to_byte()
   }
-  s
+  let bytes_out = Bytes::from_array(ba)
+  try {
+    @utf8.decode!(bytes_out)
+  } catch {
+    _ => ""
+  }
 }
 
 extern "C" fn get_env_wrapper() = "get_env_wrapper"
@@ -77,19 +84,25 @@ extern "C" fn get_env_wrapper() = "get_env_wrapper"
 pub fn get_clipboard_text() -> String {
   get_clipboard_text_wrapper()
   let len = get_text_buffer_len()
-  let mut s = ""
+  let ba = FixedArray::make(len, b'\x00')
   for i = 0; i < len; i = i + 1 {
-    s = s + get_text_buffer_char(i).unsafe_to_char().to_string()
+    ba[i] = get_text_buffer_char(i).to_byte()
   }
-  s
+  let bytes = Bytes::from_array(ba)
+  try {
+    @utf8.decode!(bytes)
+  } catch {
+    _ => ""
+  }
 }
 
 extern "C" fn set_clipboard_text_wrapper() = "set_clipboard_text_wrapper"
 
 pub fn set_clipboard_text(text: String) -> Unit {
   clear_text_buffer()
-  for c in text {
-    append_text_char(c.to_int())
+  let bytes = @utf8.encode(text)
+  for i = 0; i < bytes.length(); i = i + 1 {
+    append_text_char(bytes[i].to_int())
   }
   set_clipboard_text_wrapper()
 }
@@ -239,8 +252,9 @@ pub fn is_key_pressed_repeat(key: Int) -> Bool {
 
 pub fn draw_text(text: String, x: Int, y: Int, fontSize: Int, r: Int, g: Int, b: Int, a: Int) -> Unit {
   clear_text_buffer()
-  for c in text {
-    append_text_char(c.to_int())
+  let bytes = @utf8.encode(text)
+  for i = 0; i < bytes.length(); i = i + 1 {
+    append_text_char(bytes[i].to_int())
   }
   draw_text_from_buffer(x, y, fontSize, r, g, b, a)
 }
