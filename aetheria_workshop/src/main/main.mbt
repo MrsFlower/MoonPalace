@@ -45,29 +45,56 @@ fn main {
 }
 
 fn draw_settings(app: App) -> Unit {
-  @raylib.draw_text("Settings", 400, 50, 40, 50, 50, 50, 255)
-  
-  @raylib.draw_text("API Base URL:", 100, 150, 20, 80, 80, 80, 255)
-  if @ui.is_clicked(300, 140, 500, 40) {
+  @raylib.draw_text("Settings", 400, 20, 40, 50, 50, 50, 255)
+
+  // Creative API (Steps A & B)
+  @raylib.draw_text("Creative API (Steps A & B):", 100, 80, 20, 50, 50, 50, 255)
+
+  @raylib.draw_text("API Base URL:", 100, 120, 20, 80, 80, 80, 255)
+  if @ui.is_clicked(300, 110, 500, 40) {
     app.active_textfield = 1
   }
-  let new_api_url = @ui.draw_textbox(app.config.api_url, 300, 140, 500, 40, app.active_textfield == 1)
+  let new_c_api_url = @ui.draw_textbox(app.config.creative_api.api_url, 300, 110, 500, 40, app.active_textfield == 1)
 
-  @raylib.draw_text("API Key:", 100, 220, 20, 80, 80, 80, 255)
-  if @ui.is_clicked(300, 210, 500, 40) {
+  @raylib.draw_text("API Key:", 100, 170, 20, 80, 80, 80, 255)
+  if @ui.is_clicked(300, 160, 500, 40) {
     app.active_textfield = 2
   }
-  let new_api_key = @ui.draw_textbox(app.config.api_key, 300, 210, 500, 40, app.active_textfield == 2)
+  let new_c_api_key = @ui.draw_textbox(app.config.creative_api.api_key, 300, 160, 500, 40, app.active_textfield == 2)
 
-  @raylib.draw_text("Model Name:", 100, 290, 20, 80, 80, 80, 255)
-  if @ui.is_clicked(300, 280, 500, 40) {
+  @raylib.draw_text("Model Name:", 100, 220, 20, 80, 80, 80, 255)
+  if @ui.is_clicked(300, 210, 500, 40) {
     app.active_textfield = 3
   }
-  let new_model_name = @ui.draw_textbox(app.config.model_name, 300, 280, 500, 40, app.active_textfield == 3)
-  
-  app.config = { api_url: new_api_url, api_key: new_api_key, model_name: new_model_name }
+  let new_c_model_name = @ui.draw_textbox(app.config.creative_api.model_name, 300, 210, 500, 40, app.active_textfield == 3)
 
-  if @ui.draw_button("Save & Continue", 400, 400, 200, 50) {
+  // Structural API (Steps C & D)
+  @raylib.draw_text("Structural API (Steps C & D):", 100, 280, 20, 50, 50, 50, 255)
+
+  @raylib.draw_text("API Base URL:", 100, 320, 20, 80, 80, 80, 255)
+  if @ui.is_clicked(300, 310, 500, 40) {
+    app.active_textfield = 4
+  }
+  let new_s_api_url = @ui.draw_textbox(app.config.structural_api.api_url, 300, 310, 500, 40, app.active_textfield == 4)
+
+  @raylib.draw_text("API Key:", 100, 370, 20, 80, 80, 80, 255)
+  if @ui.is_clicked(300, 360, 500, 40) {
+    app.active_textfield = 5
+  }
+  let new_s_api_key = @ui.draw_textbox(app.config.structural_api.api_key, 300, 360, 500, 40, app.active_textfield == 5)
+
+  @raylib.draw_text("Model Name:", 100, 420, 20, 80, 80, 80, 255)
+  if @ui.is_clicked(300, 410, 500, 40) {
+    app.active_textfield = 6
+  }
+  let new_s_model_name = @ui.draw_textbox(app.config.structural_api.model_name, 300, 410, 500, 40, app.active_textfield == 6)
+
+  app.config = {
+    creative_api: { api_url: new_c_api_url, api_key: new_c_api_key, model_name: new_c_model_name },
+    structural_api: { api_url: new_s_api_url, api_key: new_s_api_key, model_name: new_s_model_name }
+  }
+
+  if @ui.draw_button("Save & Continue", 400, 500, 200, 50) {
     @config.save_config(app.config)
     app.state = AppState::Drafting
   }
@@ -75,11 +102,11 @@ fn draw_settings(app: App) -> Unit {
 
 fn draw_drafting(app: App) -> Unit {
   @raylib.draw_text("Drafting: Write your short story idea", 100, 50, 30, 50, 50, 50, 255)
-  
+
   if @ui.is_clicked(100, 100, 800, 200) {
-    app.active_textfield = 4
+    app.active_textfield = 7
   }
-  app.draft_text = @ui.draw_textbox(app.draft_text, 100, 100, 800, 200, app.active_textfield == 4)
+  app.draft_text = @ui.draw_textbox(app.draft_text, 100, 100, 800, 200, app.active_textfield == 7)
 
   if @ui.draw_button("Back to Settings", 100, 600, 200, 50) {
     app.state = AppState::Settings

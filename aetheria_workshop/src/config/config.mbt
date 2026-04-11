@@ -1,14 +1,26 @@
-pub(all) struct Config {
+pub(all) struct ApiConfig {
   api_url: String
   api_key: String
   model_name: String
 } derive(Show, ToJson, FromJson)
 
+pub(all) struct Config {
+  creative_api: ApiConfig
+  structural_api: ApiConfig
+} derive(Show, ToJson, FromJson)
+
 pub fn Config::default() -> Config {
   {
-    api_url: "https://api.deepseek.com/v1",
-    api_key: "",
-    model_name: "deepseek-chat",
+    creative_api: {
+      api_url: "https://api.deepseek.com/v1",
+      api_key: "",
+      model_name: "deepseek-chat",
+    },
+    structural_api: {
+      api_url: "https://api.deepseek.com/v1",
+      api_key: "",
+      model_name: "deepseek-chat",
+    }
   }
 }
 

@@ -32,10 +32,16 @@ fn start_generation_step(app: App, step: Int) -> Unit {
     msg2.to_json()
   ]
   
+  let api_cfg = if step == 1 || step == 2 {
+    app.config.creative_api
+  } else {
+    app.config.structural_api
+  }
+
   let req_obj : Map[String, Json] = {
-    "api_url": app.config.api_url.to_json(),
-    "api_key": app.config.api_key.to_json(),
-    "model_name": app.config.model_name.to_json(),
+    "api_url": api_cfg.api_url.to_json(),
+    "api_key": api_cfg.api_key.to_json(),
+    "model_name": api_cfg.model_name.to_json(),
     "messages": messages.to_json()
   }
 
