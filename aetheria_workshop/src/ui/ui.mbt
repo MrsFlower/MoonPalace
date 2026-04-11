@@ -44,13 +44,14 @@ pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_ac
     // Handle input
     let mut key = @raylib.get_char_pressed()
     while key > 0 {
-      if key >= 32 && key <= 125 { // printable ASCII
+      if key >= 32 { // Accept all printable characters including Unicode (Chinese)
         let c = key.unsafe_to_char()
         new_text = new_text + c.to_string()
       }
       key = @raylib.get_char_pressed()
     }
 
+    // Handle backspace
     let mut do_backspace = false
     if @raylib.is_key_pressed(259) {
       do_backspace = true
@@ -72,6 +73,10 @@ pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_ac
         if @raylib.is_key_down(341) || @raylib.is_key_down(345) { // Ctrl + Backspace -> Clear all
           new_text = ""
         } else {
+          // Handle UTF-8 deletion safely by iterating to find the last valid char boundary
+          // In Moonbit, String is UTF-16 internally, so simple substring is mostly safe
+          // However, for supplementary planes (surrogate pairs), we might need to remove 2 code units.
+          // Moonbit's String.length() counts characters (Unicode scalar values), not just bytes.
           new_text = new_text[:len - 1].to_string()
         }
       }

@@ -17,6 +17,11 @@ pub(all) struct App {
 }
 
 fn main {
+  // Note: For native Windows IME support, we can't do much from MoonBit alone 
+  // as it requires specific Win32 API calls in the message loop.
+  // However, removing the ASCII limit in `ui.mbt` allows Raylib's `GetCharPressed()` 
+  // to grab whatever the OS IME passes it (which handles Chinese composition).
+  
   @raylib.init_window(1024, 768, "Aetheria3D Workshop")
   @raylib.set_target_fps(60)
   @raylib.load_app_font()

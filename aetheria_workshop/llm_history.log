@@ -1,0 +1,22 @@
+
+==================================================
+REQUEST TO: https://api.lkeap.cloud.tencent.com/coding/v3/chat/completions
+{
+  "model": "hunyuan-2.0-thinking",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "Hello, please reply with 'API connection successful!'."
+    }
+  ],
+  "temperature": 0.7,
+  "max_tokens": 2048
+}
+--------------------------------------------------
+RESPONSE:
+{"id":"f57106179ff3f4c60852bc446288ddc1","object":"chat.completion","created":1775921470,"model":"hunyuan-2.0-thinking","choices":[{"index":0,"message":{"role":"assistant","content":"API connection successful!\n","reasoning_content":"The user wants me to reply with a specific string: 'API connection successful!'.\n\nMy task is to provide that exact response.\n\nI should not add any extra text, explanations, or pleasantries. Just the required string.\n\nSo, the output should be:\nAPI connection successful!\n"},"finish_reason":"stop"}],"usage":{"prompt_tokens":21,"completion_tokens":69,"total_tokens":90,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0}}}
+==================================================
