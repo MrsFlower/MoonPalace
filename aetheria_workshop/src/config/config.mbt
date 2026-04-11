@@ -12,14 +12,14 @@ pub(all) struct Config {
 pub fn Config::default() -> Config {
   {
     creative_api: {
-      api_url: "https://api.deepseek.com/v1",
+      api_url: "https://tokenhub.tencentmaas.com/v1/chat/completions",
       api_key: "",
-      model_name: "deepseek-chat",
+      model_name: "hunyuan-2.0-thinking-20251109",
     },
     structural_api: {
-      api_url: "https://api.deepseek.com/v1",
+      api_url: "https://tokenhub.tencentmaas.com/v1/chat/completions",
       api_key: "",
-      model_name: "deepseek-chat",
+      model_name: "deepseek-v3.2",
     }
   }
 }

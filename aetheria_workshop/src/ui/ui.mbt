@@ -32,13 +32,15 @@ pub fn draw_button(text: String, x: Int, y: Int, width: Int, height: Int) -> Boo
   is_clicked
 }
 
+let backspace_timer : Ref[Double] = { val: 0.0 }
+
 pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_active: Bool) -> String {
   let mut new_text = text
-  
+
   if is_active {
     @raylib.draw_rectangle(x, y, width, height, 255, 255, 255, 255)
     @raylib.draw_rectangle_lines(x, y, width, height, 0, 120, 255, 255)
-    
+
     // Handle input
     let mut key = @raylib.get_char_pressed()
     while key > 0 {
@@ -49,7 +51,22 @@ pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_ac
       key = @raylib.get_char_pressed()
     }
 
-    if @raylib.is_key_pressed_repeat(259) { // 259 is KEY_BACKSPACE in Raylib
+    let mut do_backspace = false
+    if @raylib.is_key_pressed(259) {
+      do_backspace = true
+      backspace_timer.val = 0.0
+    } else if @raylib.is_key_down(259) {
+      backspace_timer.val = backspace_timer.val + 1.0
+      if backspace_timer.val > 30.0 { // half a second delay
+        if backspace_timer.val.to_int() % 3 == 0 { // repeat every 3 frames
+          do_backspace = true
+        }
+      }
+    } else {
+      backspace_timer.val = 0.0
+    }
+
+    if do_backspace {
       let len = new_text.length()
       if len > 0 {
         if @raylib.is_key_down(341) || @raylib.is_key_down(345) { // Ctrl + Backspace -> Clear all

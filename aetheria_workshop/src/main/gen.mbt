@@ -1,20 +1,23 @@
 fn start_generation_step(app: App, step: Int) -> Unit {
   app.generation_step = step
-  
+
   let mut system_prompt = ""
   let mut user_prompt = ""
 
-  if step == 1 {
+  if step == 0 { // Test API
+    system_prompt = "You are a helpful assistant."
+    user_prompt = "Hello, please reply with 'API connection successful!'."
+  } else if step == 1 {
     system_prompt = "You are a top-tier world builder. Please expand the following idea into a detailed world-building bible (500 words) including history, factions, and visual tone."
     user_prompt = app.draft_text
   } else if step == 2 {
-    system_prompt = "You are an interactive fiction writer. Based on the world bible, write a branching narrative with at least 3 endings. Provide text only."
+    system_prompt = "You are an interactive fiction writer. Based on the world bible, write a branching narrative with at least 3 endings. Provide text only."  
     user_prompt = app.generated_content
   } else if step == 3 {
-    system_prompt = "You are a screenwriter and art director. Convert the branching narrative into a detailed scene-by-scene script outline, specifying environment, lighting, camera angle, and key props for each scene."
+    system_prompt = "You are a screenwriter and art director. Convert the branching narrative into a detailed scene-by-scene script outline, specifying environment, lighting, camera angle, and key props for each scene. Remember to incorporate 'Narrative Funnels', 'State Tracking', and 'Systemic Gameplay' into the design of the script. Do not output JSON yet."
     user_prompt = app.generated_content
   } else if step == 4 {
-    system_prompt = "You are a technical designer. Convert the script outline into a strict JSON story tree. Each node must have 'id', 'is_ending', 'narrative' (text_content, mood), 'cinematography' (environment_desc, scale_meters: {width, height, depth}, lighting, camera_angle, image_prompt), 'assets' (key_props array), and 'gameplay' (choices array with text and target_id). DO NOT output any markdown, only valid JSON."
+    system_prompt = "You are a technical designer. Convert the script outline into a strict JSON story tree. Each node must have:\n1. 'id' (string)\n2. 'narrative' (object with text_content, mood)\n3. 'cinematography' (environment_desc, scale_meters: {width, height, depth}, lighting, camera_angle, image_prompt)\n4. 'gameplay' (object with 'required_conditions' map, 'state_changes' map, 'mechanic_trigger' string, and 'choices' array).\nEach choice must have 'text', 'target_id', and optionally 'condition'.\nDO NOT output any markdown, only valid JSON."
     user_prompt = app.generated_content
   }
 
@@ -32,7 +35,7 @@ fn start_generation_step(app: App, step: Int) -> Unit {
     msg2.to_json()
   ]
   
-  let api_cfg = if step == 1 || step == 2 {
+  let api_cfg = if step == 0 || step == 1 || step == 2 {
     app.config.creative_api
   } else {
     app.config.structural_api

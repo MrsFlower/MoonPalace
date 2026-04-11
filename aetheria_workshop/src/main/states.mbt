@@ -53,7 +53,11 @@ fn draw_review(app: App) -> Unit {
   
   @raylib.draw_text(preview, 100, 100, 20, 80, 80, 80, 255)
   
-  if app.generation_step == 1 {
+  if app.generation_step == 0 {
+    if @ui.draw_button("Back to Settings", 100, 600, 200, 50) {
+      app.state = AppState::Settings
+    }
+  } else if app.generation_step == 1 {
     if @ui.draw_button("Proceed to Step B (Story Tree)", 700, 600, 250, 50) {
       app.state = AppState::Generating
       start_generation_step(app, 2)

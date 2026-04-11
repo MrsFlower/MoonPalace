@@ -94,9 +94,33 @@ fn draw_settings(app: App) -> Unit {
     structural_api: { api_url: new_s_api_url, api_key: new_s_api_key, model_name: new_s_model_name }
   }
 
-  if @ui.draw_button("Save & Continue", 400, 500, 200, 50) {
+  if @ui.draw_button("Use Domestic URL", 100, 480, 200, 40) {
+    app.config = {
+      creative_api: { ..app.config.creative_api, api_url: "https://tokenhub.tencentmaas.com/v1/chat/completions" },
+      structural_api: { ..app.config.structural_api, api_url: "https://tokenhub.tencentmaas.com/v1/chat/completions" }
+    }
+  }
+  if @ui.draw_button("Use Intl URL", 320, 480, 200, 40) {
+    app.config = {
+      creative_api: { ..app.config.creative_api, api_url: "https://tokenhub-intl.tencentmaas.com/v1/chat/completions" },
+      structural_api: { ..app.config.structural_api, api_url: "https://tokenhub-intl.tencentmaas.com/v1/chat/completions" }
+    }
+  }
+  
+  if @ui.draw_button("Test Creative API", 540, 480, 200, 40) {
+    @config.save_config(app.config)
+    app.state = AppState::Generating
+    start_generation_step(app, 0) // We'll use step 0 for a simple test
+  }
+
+  if @ui.draw_button("Save & Continue", 400, 540, 200, 50) {
     @config.save_config(app.config)
     app.state = AppState::Drafting
+  }
+
+  // Display API test result
+  if app.generation_step == 0 {
+    @raylib.draw_text("Test finished. Please check console or final_story.json for result.", 100, 600, 20, 0, 150, 0, 255)
   }
 }
 
