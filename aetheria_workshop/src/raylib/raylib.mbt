@@ -26,6 +26,20 @@ pub fn is_mouse_button_pressed(button: Int) -> Bool {
   is_mouse_button_pressed_wrapper(button) != 0
 }
 
+extern "C" fn get_clipboard_text_wrapper() = "get_clipboard_text_wrapper"
+extern "C" fn get_text_buffer_char(index: Int) -> Int = "get_text_buffer_char"
+extern "C" fn get_text_buffer_len() -> Int = "get_text_buffer_len"
+
+pub fn get_clipboard_text() -> String {
+  get_clipboard_text_wrapper()
+  let len = get_text_buffer_len()
+  let mut s = ""
+  for i = 0; i < len; i = i + 1 {
+    s = s + get_text_buffer_char(i).to_char().to_string()
+  }
+  s
+}
+
 extern "C" fn get_char_pressed_wrapper() -> Int = "GetCharPressed_wrapper"
 
 pub fn get_char_pressed() -> Int {

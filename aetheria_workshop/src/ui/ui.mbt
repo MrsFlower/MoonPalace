@@ -55,6 +55,13 @@ pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_ac
         new_text = new_text[:len - 1].to_string()
       }
     }
+    
+    // Handle paste (Ctrl+V)
+    if @raylib.is_key_down(341) || @raylib.is_key_down(345) { // 341=KEY_LEFT_CONTROL, 345=KEY_RIGHT_CONTROL
+      if @raylib.is_key_pressed(86) { // 86=KEY_V
+        new_text = new_text + @raylib.get_clipboard_text()
+      }
+    }
   } else {
     @raylib.draw_rectangle(x, y, width, height, 240, 240, 240, 255)
     @raylib.draw_rectangle_lines(x, y, width, height, 150, 150, 150, 255)

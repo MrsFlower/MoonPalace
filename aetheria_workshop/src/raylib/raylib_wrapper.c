@@ -15,6 +15,17 @@ void clear_text_buffer() {
     text_buffer[0] = '\0';
 }
 
+int32_t get_text_buffer_char(int32_t index) {
+    if (index >= 0 && index < text_len) {
+        return (int32_t)text_buffer[index];
+    }
+    return 0;
+}
+
+int32_t get_text_buffer_len() {
+    return text_len;
+}
+
 void append_text_char(int32_t c) {
     if (text_len < 1023) {
         text_buffer[text_len++] = (char)c;
@@ -156,6 +167,20 @@ int32_t IsKeyDown_wrapper(int32_t key) {
 
 int32_t IsKeyPressed_wrapper(int32_t key) {
     return IsKeyPressed(key) ? 1 : 0;
+}
+
+void get_clipboard_text_wrapper() {
+    clear_text_buffer();
+    const char* clip = GetClipboardText();
+    if (clip != NULL) {
+        int i = 0;
+        while (clip[i] != '\0' && i < 1023) {
+            text_buffer[i] = clip[i];
+            i++;
+        }
+        text_buffer[i] = '\0';
+        text_len = i;
+    }
 }
 
 int32_t IsMouseButtonDown_wrapper(int32_t button) {
