@@ -138,8 +138,14 @@ fn draw_settings(app: App) -> Unit {
           if status == "success" {
             let preview = if msg.length() > 50 { msg[:50].to_string() + "..." } else { msg }
             @raylib.draw_text("Test Success: " + preview, 100, 600, 20, 0, 150, 0, 255)
+            if @ui.draw_button("Copy Result", 800, 590, 120, 35) {
+              @raylib.set_clipboard_text(msg)
+            }
           } else {
             @raylib.draw_text("Test Failed: " + msg, 100, 600, 20, 255, 0, 0, 255)
+            if @ui.draw_button("Copy Error", 800, 590, 120, 35) {
+              @raylib.set_clipboard_text(msg)
+            }
           }
         }
       } catch {

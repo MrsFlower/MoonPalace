@@ -77,15 +77,18 @@ pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_ac
       }
     }
     
-    // Handle paste (Ctrl+V)
+    // Handle paste (Ctrl+V) and copy (Ctrl+C)
     if @raylib.is_key_down(341) || @raylib.is_key_down(345) { // 341=KEY_LEFT_CONTROL, 345=KEY_RIGHT_CONTROL
       if @raylib.is_key_pressed(86) { // 86=KEY_V
         new_text = new_text + @raylib.get_clipboard_text()
       }
+      if @raylib.is_key_pressed(67) { // 67=KEY_C
+        @raylib.set_clipboard_text(new_text)
+      }
     }
   } else {
     @raylib.draw_rectangle(x, y, width, height, 240, 240, 240, 255)
-    @raylib.draw_rectangle_lines(x, y, width, height, 150, 150, 150, 255)
+    @raylib.draw_rectangle_lines(x, y, width, height, 150, 150, 150, 255)       
   }
   
   let display_text = if is_active && (@raylib.get_frame_time() * 1000.0).to_int() % 1000 < 500 {
@@ -93,9 +96,17 @@ pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_ac
   } else {
     new_text
   }
-  
-  @raylib.draw_text(display_text, x + 5, y + (height - 20) / 2, 20, 0, 0, 0, 255)
-  
+
+  // Scroll text if it's too long
+  let max_chars = width / 11
+  let visible_text = if display_text.length() > max_chars {
+    "..." + display_text[display_text.length() - max_chars + 3:].to_string()
+  } else {
+    display_text
+  }
+
+  @raylib.draw_text(visible_text, x + 5, y + (height - 20) / 2, 20, 0, 0, 0, 255)
+
   new_text
 }
 

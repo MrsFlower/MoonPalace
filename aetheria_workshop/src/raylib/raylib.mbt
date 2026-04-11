@@ -41,6 +41,16 @@ pub fn get_clipboard_text() -> String {
   s
 }
 
+extern "C" fn set_clipboard_text_wrapper() = "set_clipboard_text_wrapper"
+
+pub fn set_clipboard_text(text: String) -> Unit {
+  clear_text_buffer()
+  for c in text {
+    append_text_char(c.to_int())
+  }
+  set_clipboard_text_wrapper()
+}
+
 extern "C" fn get_char_pressed_wrapper() -> Int = "GetCharPressed_wrapper"
 
 pub fn get_char_pressed() -> Int {

@@ -187,6 +187,10 @@ void get_clipboard_text_wrapper() {
     }
 }
 
+void set_clipboard_text_wrapper() {
+    SetClipboardText(text_buffer);
+}
+
 int32_t IsMouseButtonDown_wrapper(int32_t button) {
     return IsMouseButtonDown(button) ? 1 : 0;
 }

@@ -41,7 +41,7 @@ pub fn load_config() -> Config {
 }
 
 pub fn save_config(config: Config) -> Unit {
-  let json_str = config.to_json().to_string()
+  let json_str = config.to_json().stringify()
   try {
     @fs.write_string_to_file("config.json", json_str)
     println("Config saved successfully.")

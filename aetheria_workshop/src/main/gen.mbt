@@ -53,8 +53,8 @@ fn start_generation_step(app: App, step: Int) -> Unit {
   }
   
   let req_json = req_obj.to_json()
-  let req_str = req_json.to_string()
-  
+  let req_str = req_json.stringify()
+
   // Write to request.json
   try {
     @fs.write_string_to_file("request.json", req_str)
