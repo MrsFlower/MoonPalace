@@ -43,16 +43,20 @@ pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_ac
     let mut key = @raylib.get_char_pressed()
     while key > 0 {
       if key >= 32 && key <= 125 { // printable ASCII
-        let c = key.to_char()
+        let c = key.unsafe_to_char()
         new_text = new_text + c.to_string()
       }
       key = @raylib.get_char_pressed()
     }
-    
-    if @raylib.is_key_pressed(259) { // 259 is KEY_BACKSPACE in Raylib
+
+    if @raylib.is_key_pressed_repeat(259) { // 259 is KEY_BACKSPACE in Raylib
       let len = new_text.length()
       if len > 0 {
-        new_text = new_text[:len - 1].to_string()
+        if @raylib.is_key_down(341) || @raylib.is_key_down(345) { // Ctrl + Backspace -> Clear all
+          new_text = ""
+        } else {
+          new_text = new_text[:len - 1].to_string()
+        }
       }
     }
     

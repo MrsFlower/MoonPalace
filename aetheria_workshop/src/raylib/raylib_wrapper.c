@@ -169,6 +169,10 @@ int32_t IsKeyPressed_wrapper(int32_t key) {
     return IsKeyPressed(key) ? 1 : 0;
 }
 
+int32_t IsKeyPressedRepeat_wrapper(int32_t key) {
+    return IsKeyPressedRepeat(key) ? 1 : 0;
+}
+
 void get_clipboard_text_wrapper() {
     clear_text_buffer();
     const char* clip = GetClipboardText();

@@ -11,8 +11,9 @@ extern "C" fn end_drawing_wrapper() = "EndDrawing_wrapper"
 extern "C" fn clear_background_wrapper(r: Int, g: Int, b: Int, a: Int) = "ClearBackground_wrapper"
 
 // 键盘输入
-extern "C" fn is_key_down_wrapper(key: Int) -> Int = "IsKeyDown_wrapper"
-extern "C" fn is_key_pressed_wrapper(key: Int) -> Int = "IsKeyPressed_wrapper"
+extern "C" fn is_key_down_wrapper(key: Int) -> Int = "IsKeyDown_wrapper"        
+extern "C" fn is_key_pressed_wrapper(key: Int) -> Int = "IsKeyPressed_wrapper"  
+extern "C" fn is_key_pressed_repeat_wrapper(key: Int) -> Int = "IsKeyPressedRepeat_wrapper"
 
 // 鼠标输入
 extern "C" fn is_mouse_button_down_wrapper(button: Int) -> Int = "IsMouseButtonDown_wrapper"
@@ -35,7 +36,7 @@ pub fn get_clipboard_text() -> String {
   let len = get_text_buffer_len()
   let mut s = ""
   for i = 0; i < len; i = i + 1 {
-    s = s + get_text_buffer_char(i).to_char().to_string()
+    s = s + get_text_buffer_char(i).unsafe_to_char().to_string()
   }
   s
 }
@@ -177,6 +178,10 @@ pub fn is_key_down(key: Int) -> Bool {
 
 pub fn is_key_pressed(key: Int) -> Bool {
   is_key_pressed_wrapper(key) != 0
+}
+
+pub fn is_key_pressed_repeat(key: Int) -> Bool {
+  is_key_pressed_repeat_wrapper(key) != 0
 }
 
 pub fn draw_text(text: String, x: Int, y: Int, fontSize: Int, r: Int, g: Int, b: Int, a: Int) -> Unit {
