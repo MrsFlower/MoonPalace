@@ -130,13 +130,14 @@ Font app_font;
 int font_loaded = 0;
 
 void load_app_font_wrapper() {
-    int* codepoints = (int*)malloc(40000 * sizeof(int));
-    for (int i = 0; i < 40000; i++) {
+    int num_codepoints = 65000;
+    int* codepoints = (int*)malloc(num_codepoints * sizeof(int));
+    for (int i = 0; i < num_codepoints; i++) {
         codepoints[i] = i + 32;
     }
-    app_font = LoadFontEx("C:\\Windows\\Fonts\\msyh.ttc", 28, codepoints, 40000);
+    app_font = LoadFontEx("C:\\Windows\\Fonts\\msyh.ttc", 28, codepoints, num_codepoints);
     if (app_font.texture.id == 0) {
-        app_font = LoadFontEx("C:\\Windows\\Fonts\\simhei.ttf", 28, codepoints, 40000);
+        app_font = LoadFontEx("C:\\Windows\\Fonts\\simhei.ttf", 28, codepoints, num_codepoints);
     }
     free(codepoints);
     if (app_font.texture.id != 0) {

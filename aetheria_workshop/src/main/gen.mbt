@@ -4,21 +4,47 @@ fn start_generation_step(app: App, step: Int) -> Unit {
   let mut system_prompt = ""
   let mut user_prompt = ""
 
+  let scale_desc = if app.story_scale == 0 {
+    if app.lang == "ZH" { "这是一部包含 2 到 3 个关键场景的【短篇】作品。" } else { "This is a [SHORT] scale story with 2-3 key scenes." }
+  } else if app.story_scale == 1 {
+    if app.lang == "ZH" { "这是一部包含 4 到 6 个关键场景的【中篇】作品。" } else { "This is a [MEDIUM] scale story with 4-6 key scenes." }
+  } else {
+    if app.lang == "ZH" { "这是一部包含 7 个以上场景的【史诗】巨作。" } else { "This is an [EPIC] scale story with 7+ key scenes." }
+  }
+
+  let lang_instruction = if app.lang == "ZH" {
+    "请使用中文进行输出。"
+  } else {
+    "Please output in English."
+  }
+
   if step == 0 { // Test API
     system_prompt = "You are a helpful assistant."
-    user_prompt = "Hello, please reply with 'API connection successful!'."
+    user_prompt = if app.lang == "ZH" { "你好，请回复'API connection successful!'。" } else { "Hello, please reply with 'API connection successful!'." }
   } else if step == 1 {
-    system_prompt = "You are a top-tier world builder. Please expand the following idea into a detailed world-building bible (500 words) including history, factions, and visual tone."
-    user_prompt = app.draft_text
+    system_prompt = "You are a top-tier world builder. Please expand the following idea into a detailed world-building bible (500 words) including history, factions, and visual tone.\n" + lang_instruction
+    user_prompt = app.draft_text + "\n\n" + scale_desc
+    if app.refine_text != "" {
+      user_prompt = user_prompt + "\n\nUser Modification Suggestions: " + app.refine_text
+    }
   } else if step == 2 {
-    system_prompt = "You are an interactive fiction writer. Based on the world bible, write a branching narrative with at least 3 endings. Provide text only."  
-    user_prompt = app.generated_content
+    system_prompt = "You are an interactive fiction writer. Based on the world bible, write a branching narrative with at least 3 endings. Provide text only.\n" + lang_instruction
+    user_prompt = app.generated_content + "\n\n" + scale_desc
+    if app.refine_text != "" {
+      user_prompt = user_prompt + "\n\nUser Modification Suggestions: " + app.refine_text
+    }
   } else if step == 3 {
-    system_prompt = "You are a screenwriter and art director. Convert the branching narrative into a detailed scene-by-scene script outline, specifying environment, lighting, camera angle, and key props for each scene. Remember to incorporate 'Narrative Funnels', 'State Tracking', and 'Systemic Gameplay' into the design of the script. Do not output JSON yet."
-    user_prompt = app.generated_content
+    system_prompt = "You are a screenwriter and art director. Convert the branching narrative into a detailed scene-by-scene script outline, specifying environment, lighting, camera angle, and key props for each scene. Remember to incorporate 'Narrative Funnels', 'State Tracking', and 'Systemic Gameplay' into the design of the script. Do not output JSON yet.\n" + lang_instruction
+    user_prompt = app.generated_content + "\n\n" + scale_desc
+    if app.refine_text != "" {
+      user_prompt = user_prompt + "\n\nUser Modification Suggestions: " + app.refine_text
+    }
   } else if step == 4 {
-    system_prompt = "You are a technical designer. Convert the script outline into a strict JSON story tree. Each node must have:\n1. 'id' (string)\n2. 'narrative' (object with text_content, mood)\n3. 'cinematography' (environment_desc, scale_meters: {width, height, depth}, lighting, camera_angle, image_prompt)\n4. 'gameplay' (object with 'required_conditions' map, 'state_changes' map, 'mechanic_trigger' string, and 'choices' array).\nEach choice must have 'text', 'target_id', and optionally 'condition'.\nDO NOT output any markdown, only valid JSON."
+    system_prompt = "You are a technical designer. Convert the script outline into a strict JSON story tree. Each node must have:\n1. 'id' (string)\n2. 'narrative' (object with text_content, mood)\n3. 'cinematography' (environment_desc, scale_meters: {width, height, depth}, lighting, camera_angle, image_prompt)\n4. 'gameplay' (object with 'required_conditions' map, 'state_changes' map, 'mechanic_trigger' string, and 'choices' array).\nEach choice must have 'text', 'target_id', and optionally 'condition'.\nDO NOT output any markdown, only valid JSON.\n" + lang_instruction + "\nCRITICAL: Even if the rest of the JSON is in Chinese, the 'image_prompt' field inside 'cinematography' MUST BE IN ENGLISH, as it will be used for Stable Diffusion / Trellis generation."
     user_prompt = app.generated_content
+    if app.refine_text != "" {
+      user_prompt = user_prompt + "\n\nUser Modification Suggestions: " + app.refine_text
+    }
   }
 
   // Create the request JSON

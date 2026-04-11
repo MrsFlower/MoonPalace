@@ -34,7 +34,7 @@ pub fn draw_button(text: String, x: Int, y: Int, width: Int, height: Int) -> Boo
 
 let backspace_timer : Ref[Double] = { val: 0.0 }
 
-pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_active: Bool) -> String {
+pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_active: Bool, multiline~: Bool = false, scroll_y~: Ref[Double] = {val: 0.0}) -> String {
   let mut new_text = text
 
   if is_active {
@@ -45,12 +45,15 @@ pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_ac
     let mut key = @raylib.get_char_pressed()
     while key > 0 {
       if key >= 32 { // Accept all printable characters including Unicode (Chinese)
-        // Raylib's GetCharPressed returns Unicode codepoints!
-        // We can safely convert it to Moonbit Char
         let c = key.unsafe_to_char()
         new_text = new_text + c.to_string()
       }
       key = @raylib.get_char_pressed()
+    }
+    
+    // Accept Enter key for multiline
+    if multiline && @raylib.is_key_pressed(257) { // 257 = KEY_ENTER
+      new_text = new_text + "\n"
     }
 
     // Handle backspace
@@ -104,15 +107,38 @@ pub fn draw_textbox(text: String, x: Int, y: Int, width: Int, height: Int, is_ac
     new_text
   }
 
-  // Scroll text if it's too long
-  let max_chars = width / 11
-  let visible_text = if display_text.length() > max_chars {
-    "..." + display_text[display_text.length() - max_chars + 3:].to_string()
-  } else {
-    display_text
-  }
+  if multiline {
+    // Handle scroll
+    let mx = @raylib.get_mouse_x()
+    let my = @raylib.get_mouse_y()
+    if mx >= x && mx <= x + width && my >= y && my <= y + height {
+      let wheel = @raylib.get_mouse_wheel_move()
+      scroll_y.val = scroll_y.val - wheel * 30.0
+      if scroll_y.val < 0.0 { scroll_y.val = 0.0 }
+    }
 
-  @raylib.draw_text(visible_text, x + 5, y + (height - 20) / 2, 20, 0, 0, 0, 255)
+    @raylib.begin_scissor_mode(x + 5, y + 5, width - 10, height - 10)
+    let total_h = draw_text_wrapped(display_text, x + 10, y + 10 - scroll_y.val.to_int(), width - 30, 20, 0, 0, 0, 255)
+    @raylib.end_scissor_mode()
+
+    let max_scroll = if total_h > height { (total_h - height + 20).to_double() } else { 0.0 }
+    if scroll_y.val > max_scroll { scroll_y.val = max_scroll }
+    if max_scroll > 0.0 {
+      let bar_h = height * height / total_h
+      let bar_y = y + (scroll_y.val / max_scroll * (height - bar_h).to_double()).to_int()
+      @raylib.draw_rectangle(x + width - 15, bar_y, 10, bar_h, 180, 180, 180, 255)
+    }
+
+  } else {
+    // Scroll text if it's too long
+    let max_chars = width / 11
+    let visible_text = if display_text.length() > max_chars {
+      "..." + display_text[display_text.length() - max_chars + 3:].to_string()
+    } else {
+      display_text
+    }
+    @raylib.draw_text(visible_text, x + 5, y + (height - 20) / 2, 20, 0, 0, 0, 255)
+  }
 
   new_text
 }

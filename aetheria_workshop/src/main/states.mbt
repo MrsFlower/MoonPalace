@@ -48,7 +48,20 @@ fn draw_review(app: App) -> Unit {
   @raylib.draw_text(title, 100, 30, 30, 50, 50, 50, 255)
 
   // Use the scrollable text area for displaying long text correctly
-  @ui.draw_scrollable_text_area(app.generated_content, 100, 80, 800, 480, app.scroll_y)
+  @ui.draw_scrollable_text_area(app.generated_content, 100, 80, 800, 420, app.scroll_y)
+
+  // Refine / Improve input
+  @raylib.draw_text(if app.lang == "EN" { "Refine/Suggestions:" } else { "修改/完善建议:" }, 100, 520, 20, 50, 50, 50, 255)
+  if @ui.is_clicked(300, 510, 480, 40) {
+    app.active_textfield = 8
+  }
+  app.refine_text = @ui.draw_textbox(app.refine_text, 300, 510, 480, 40, app.active_textfield == 8)
+  
+  if @ui.draw_button(if app.lang == "EN" { "Regenerate" } else { "重新生成" }, 800, 510, 100, 40) {
+    app.state = AppState::Generating
+    app.scroll_y.val = 0.0
+    start_generation_step(app, app.generation_step)
+  }
 
   if app.generation_step == 0 {
     if @ui.draw_button(if app.lang == "EN" { "Back to Settings" } else { "返回设置" }, 100, 600, 200, 50) {
@@ -58,18 +71,21 @@ fn draw_review(app: App) -> Unit {
     if @ui.draw_button(if app.lang == "EN" { "Proceed to Step B (Story Tree)" } else { "继续: 步骤 B (多结局故事)" }, 650, 600, 300, 50) {   
       app.state = AppState::Generating
       app.scroll_y.val = 0.0
+      app.refine_text = ""
       start_generation_step(app, 2)
     }
   } else if app.generation_step == 2 {
     if @ui.draw_button(if app.lang == "EN" { "Proceed to Step C (Script)" } else { "继续: 步骤 C (分镜剧本)" }, 650, 600, 300, 50) {       
       app.state = AppState::Generating
       app.scroll_y.val = 0.0
+      app.refine_text = ""
       start_generation_step(app, 3)
     }
   } else if app.generation_step == 3 {
     if @ui.draw_button(if app.lang == "EN" { "Proceed to Step D (JSON)" } else { "继续: 步骤 D (生成JSON)" }, 650, 600, 300, 50) {
       app.state = AppState::Generating
       app.scroll_y.val = 0.0
+      app.refine_text = ""
       start_generation_step(app, 4)
     }
   } else if app.generation_step == 4 {

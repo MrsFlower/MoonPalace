@@ -14,6 +14,8 @@ pub(all) struct App {
   mut generation_step: Int // 0: Test, 1: Step A, 2: Step B, 3: Step C, 4: Step D
   mut lang: String // "EN" or "ZH"
   scroll_y: Ref[Double]
+  mut story_scale: Int // 0: Short, 1: Medium, 2: Epic
+  mut refine_text: String
 }
 
 fn main {
@@ -34,7 +36,9 @@ fn main {
     generated_content: "",
     generation_step: -1,
     lang: "EN",
-    scroll_y: { val: 0.0 }
+    scroll_y: { val: 0.0 },
+    story_scale: 1, // Default to Medium
+    refine_text: "",
   }
 
   while not(@raylib.window_should_close()) {
@@ -196,7 +200,21 @@ fn draw_drafting(app: App) -> Unit {
   if @ui.is_clicked(100, 100, 800, 200) {
     app.active_textfield = 7
   }
-  app.draft_text = @ui.draw_textbox(app.draft_text, 100, 100, 800, 200, app.active_textfield == 7)
+  app.draft_text = @ui.draw_textbox(app.draft_text, 100, 100, 800, 200, app.active_textfield == 7, multiline=true, scroll_y=app.scroll_y)
+
+  @raylib.draw_text(if app.lang == "EN" { "Story Scale:" } else { "故事篇幅:" }, 100, 350, 20, 50, 50, 50, 255)
+  let scale_text = ["Short (2-3 scenes)", "Medium (4-6 scenes)", "Epic (7+ scenes)"]
+  let scale_text_zh = ["短篇 (2-3个场景)", "中篇 (4-6个场景)", "史诗 (7个场景以上)"]
+  for i = 0; i < 3; i = i + 1 {
+    let btn_text = if app.lang == "EN" { scale_text[i] } else { scale_text_zh[i] }
+    let is_selected = app.story_scale == i
+    if is_selected {
+      @raylib.draw_rectangle(100 + i * 250, 390, 220, 40, 200, 200, 255, 255)
+    }
+    if @ui.draw_button(btn_text, 100 + i * 250, 390, 220, 40) {
+      app.story_scale = i
+    }
+  }
 
   if @ui.draw_button(if app.lang == "EN" { "Back to Settings" } else { "返回设置" }, 100, 600, 200, 50) {
     app.state = AppState::Settings
@@ -204,6 +222,7 @@ fn draw_drafting(app: App) -> Unit {
   
   if @ui.draw_button(if app.lang == "EN" { "Generate Script" } else { "生成世界观" }, 700, 600, 200, 50) {
     app.state = AppState::Generating
+    app.refine_text = ""
     start_generation_step(app, 1)
   }
 }

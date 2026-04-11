@@ -1,0 +1,37 @@
+{
+  "id": "scene_1",
+  "narrative": {
+    "text_content": "Voiceover reads father’s letter line “Truth lies between wolf howl and rust.” State Tracker UI faintly pulses (Moral: Uncertain; Alliance: None; Forest Health: Declining). Council guardsman approaches, delivers secret order. Narrative Funnel begins — two choices presented visually as split-screen vignettes (A: forest path, B: wolf howls).",
+    "mood": "ominous"
+  },
+  "cinematography": {
+    "environment_desc": "A desolate village square framed by a massive iron cross; ground scorched, ash-dusted. Sulphur wind whips dust across cracked stone. In background: skeletal trees on horizon.",
+    "scale_meters": {
+      "width": 100,
+      "height": 30,
+      "depth": 100
+    },
+    "lighting": "Harsh amber sunlight filtered through ochre haze; long shadows from crossbeams. Wind carries flickers of ember glow.",
+    "camera_angle": "Wide establishing shot from low angle—cross silhouetted against burning sky. Push-in to medium close-up of protagonist (you) standing defiantly, red cloak flaring.",
+    "image_prompt": "Desolate village square with massive iron cross, ash-dusted ground, sulphur wind, skeletal trees on horizon, protagonist in red cloak with council guardsman approaching"
+  },
+  "gameplay": {
+    "required_conditions": {},
+    "state_changes": {
+      "Moral": "Uncertain",
+      "Alliance": "None",
+      "Forest Health": "Declining"
+    },
+    "mechanic_trigger": "narrative_funnel_start",
+    "choices": [
+      {
+        "text": "Enter the Ashen Woods",
+        "target_id": "scene_2A"
+      },
+      {
+        "text": "Follow the Wolf Howl",
+        "target_id": "scene_2B"
+      }
+    ]
+  }
+}
