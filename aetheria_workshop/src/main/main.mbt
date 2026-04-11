@@ -47,6 +47,17 @@ fn main {
 fn draw_settings(app: App) -> Unit {
   @raylib.draw_text("Settings", 400, 20, 40, 50, 50, 50, 255)
 
+  // Automatically read API Key from env if empty
+  if app.config.creative_api.api_key == "" {
+    let env_key = @raylib.get_env("CODINGPLAN_API_KEY")
+    if env_key != "" {
+      app.config = {
+        creative_api: { ..app.config.creative_api, api_key: env_key },
+        structural_api: { ..app.config.structural_api, api_key: env_key }
+      }
+    }
+  }
+
   // Creative API (Steps A & B)
   @raylib.draw_text("Creative API (Steps A & B):", 100, 80, 20, 50, 50, 50, 255)
 
@@ -94,16 +105,16 @@ fn draw_settings(app: App) -> Unit {
     structural_api: { api_url: new_s_api_url, api_key: new_s_api_key, model_name: new_s_model_name }
   }
 
-  if @ui.draw_button("Use Domestic URL", 100, 480, 200, 40) {
+  if @ui.draw_button("Use LKEAP URL", 100, 480, 200, 40) {
+    app.config = {
+      creative_api: { ..app.config.creative_api, api_url: "https://api.lkeap.cloud.tencent.com/coding/v3/chat/completions" },
+      structural_api: { ..app.config.structural_api, api_url: "https://api.lkeap.cloud.tencent.com/coding/v3/chat/completions" }
+    }
+  }
+  if @ui.draw_button("Use TokenHub URL", 320, 480, 200, 40) {
     app.config = {
       creative_api: { ..app.config.creative_api, api_url: "https://tokenhub.tencentmaas.com/v1/chat/completions" },
       structural_api: { ..app.config.structural_api, api_url: "https://tokenhub.tencentmaas.com/v1/chat/completions" }
-    }
-  }
-  if @ui.draw_button("Use Intl URL", 320, 480, 200, 40) {
-    app.config = {
-      creative_api: { ..app.config.creative_api, api_url: "https://tokenhub-intl.tencentmaas.com/v1/chat/completions" },
-      structural_api: { ..app.config.structural_api, api_url: "https://tokenhub-intl.tencentmaas.com/v1/chat/completions" }
     }
   }
   
@@ -114,6 +125,14 @@ fn draw_settings(app: App) -> Unit {
 
   if @ui.draw_button("Save & Continue", 400, 540, 200, 50) {
     @config.save_config(app.config)
+    
+    // Save to environment variable for future sessions
+    // Using a simple Python script to set user environment variable permanently on Windows
+    let key = app.config.creative_api.api_key
+    if key != "" {
+      @raylib.system_command("setx CODINGPLAN_API_KEY \"" + key + "\"")
+    }
+
     app.state = AppState::Drafting
   }
 

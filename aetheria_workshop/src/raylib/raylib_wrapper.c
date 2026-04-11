@@ -7,12 +7,29 @@
 #include <string.h>
 
 // Text buffer to safely receive string data from Moonbit
-static char text_buffer[1024];
-static int text_len = 0;
+char text_buffer[1024];
+int text_len = 0;
 
 void clear_text_buffer() {
+    for (int i = 0; i < 1024; i++) {
+        text_buffer[i] = '\0';
+    }
     text_len = 0;
-    text_buffer[0] = '\0';
+}
+
+void get_env_wrapper() {
+    text_buffer[text_len] = '\0'; // ensure null termination for the env var name
+    char* val = getenv(text_buffer);
+    clear_text_buffer();
+    if (val != NULL) {
+        int i = 0;
+        while (val[i] != '\0' && i < 1023) {
+            text_buffer[i] = val[i];
+            i++;
+        }
+        text_buffer[i] = '\0';
+        text_len = i;
+    }
 }
 
 int32_t get_text_buffer_char(int32_t index) {

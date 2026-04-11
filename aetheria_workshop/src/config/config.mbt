@@ -12,14 +12,14 @@ pub(all) struct Config {
 pub fn Config::default() -> Config {
   {
     creative_api: {
-      api_url: "https://tokenhub.tencentmaas.com/v1/chat/completions",
+      api_url: "https://api.lkeap.cloud.tencent.com/coding/v3/chat/completions",
       api_key: "",
-      model_name: "hunyuan-2.0-thinking-20251109",
+      model_name: "hunyuan-2.0-thinking",
     },
     structural_api: {
-      api_url: "https://tokenhub.tencentmaas.com/v1/chat/completions",
+      api_url: "https://api.lkeap.cloud.tencent.com/coding/v3/chat/completions",
       api_key: "",
-      model_name: "deepseek-v3.2",
+      model_name: "hunyuan-2.0-instruct",
     }
   }
 }

@@ -31,6 +31,25 @@ extern "C" fn get_clipboard_text_wrapper() = "get_clipboard_text_wrapper"
 extern "C" fn get_text_buffer_char(index: Int) -> Int = "get_text_buffer_char"
 extern "C" fn get_text_buffer_len() -> Int = "get_text_buffer_len"
 
+pub fn get_env(name: String) -> String {
+  clear_text_buffer()
+  let len = name.length()
+  for i = 0; i < len; i = i + 1 {
+    append_text_char(name[i].to_int())
+  }
+  
+  get_env_wrapper()
+  
+  let out_len = get_text_buffer_len()
+  let mut s = ""
+  for i = 0; i < out_len; i = i + 1 {
+    s = s + get_text_buffer_char(i).unsafe_to_char().to_string()
+  }
+  s
+}
+
+extern "C" fn get_env_wrapper() = "get_env_wrapper"
+
 pub fn get_clipboard_text() -> String {
   get_clipboard_text_wrapper()
   let len = get_text_buffer_len()
