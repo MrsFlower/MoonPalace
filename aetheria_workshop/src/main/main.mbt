@@ -24,7 +24,7 @@ fn main {
     active_textfield: 0,
     draft_text: "",
     generated_content: "",
-    generation_step: 0,
+    generation_step: -1,
   }
 
   while not(@raylib.window_should_close()) {
@@ -109,7 +109,6 @@ fn draw_settings(app: App) -> Unit {
   
   if @ui.draw_button("Test Creative API", 540, 480, 200, 40) {
     @config.save_config(app.config)
-    app.state = AppState::Generating
     start_generation_step(app, 0) // We'll use step 0 for a simple test
   }
 
@@ -120,7 +119,35 @@ fn draw_settings(app: App) -> Unit {
 
   // Display API test result
   if app.generation_step == 0 {
-    @raylib.draw_text("Test finished. Please check console or final_story.json for result.", 100, 600, 20, 0, 150, 0, 255)
+    if @fs.path_exists("response.json") {
+      try {
+        let content = @fs.read_file_to_string("response.json")
+        let res_json = @json.parse(content)
+        if res_json is Object(obj) {
+          let status = match obj.get("status") {
+            Some(String(s)) => s
+            _ => "unknown"
+          }
+          let msg = match obj.get("content") {
+            Some(String(m)) => m
+            _ => match obj.get("message") {
+              Some(String(m)) => m
+              _ => "No message"
+            }
+          }
+          if status == "success" {
+            let preview = if msg.length() > 50 { msg[:50].to_string() + "..." } else { msg }
+            @raylib.draw_text("Test Success: " + preview, 100, 600, 20, 0, 150, 0, 255)
+          } else {
+            @raylib.draw_text("Test Failed: " + msg, 100, 600, 20, 255, 0, 0, 255)
+          }
+        }
+      } catch {
+        _ => @raylib.draw_text("Parsing test result...", 100, 600, 20, 100, 100, 100, 255)
+      }
+    } else {
+      @raylib.draw_text("Testing API... Please wait", 100, 600, 20, 100, 100, 100, 255)
+    }
   }
 }
 
