@@ -1,0 +1,8 @@
+{
+  "api_url": "https://api.deepseek.com/v1/chat/completions",
+  "api_key": "YOUR_KEY_HERE",
+  "model_name": "deepseek-chat",
+  "messages": [
+    {"role": "user", "content": "Say hello!"}
+  ]
+}

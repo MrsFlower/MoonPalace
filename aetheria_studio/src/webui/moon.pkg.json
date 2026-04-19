@@ -1,0 +1,12 @@
+{
+  "is-main": false,
+  "import": [
+    "moonbitlang/core/encoding/utf8"
+  ],
+  "link-flags": [
+    "-lws2_32",
+    "-ladvapi32",
+    "-lole32",
+    "-luser32"
+  ]
+}

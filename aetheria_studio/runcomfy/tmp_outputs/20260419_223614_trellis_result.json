@@ -1,0 +1,18 @@
+{
+  "request_id": "4031c796-2976-48de-85b5-3121c7181111",
+  "status": "succeeded",
+  "log_url": "https://cdn.runcomfy.com/logs/64f9cc76-f8c1-40fc-a1c3-e85280764770/comfyui.txt",
+  "outputs": {
+    "149": {
+      "result": [
+        "e2e_20260419_223614_00001_.glb",
+        null,
+        null,
+        "https://serverless-api-storage.runcomfy.net/deployment_requests/4031c796-2976-48de-85b5-3121c7181111/output/e2e_20260419_223614_00001_.glb"
+      ]
+    }
+  },
+  "created_at": "2026-04-19T14:40:12.591700+00:00",
+  "finished_at": "2026-04-19T15:08:04.352567+00:00",
+  "instance_id": "64f9cc76-f8c1-40fc-a1c3-e85280764770"
+}

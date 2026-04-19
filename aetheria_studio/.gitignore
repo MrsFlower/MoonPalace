@@ -1,0 +1,19 @@
+.DS_Store
+_build/
+.mooncakes/
+.moonagent/
+
+# Large files
+*.glb
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.mp4
+*.wav
+*.bin
+*.exe
+
+# Projects outputs
+Projects/
+game_*/

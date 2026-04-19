@@ -1,0 +1,17 @@
+{
+  "is-main": true,
+  "import": [
+    "username/aetheria_studio/src/webui",
+    "username/aetheria_studio/src/config",
+    "username/aetheria_studio/src/net",
+    "moonbitlang/core/json",
+    "moonbitlang/core/encoding/utf8",
+    "moonbitlang/x/fs",
+    "moonbitlang/core/strconv"
+  ],
+  "link": {
+    "native": {
+      "cc-link-flags": "src/webui/webui_wrapper.c src/net/net_wrapper.c -lwininet -Iwebui_lib/include -Lwebui_lib/dist -lwebui-2-static -lstdc++ -lws2_32 -ladvapi32 -lole32 -luser32 -luuid -mconsole"
+    }
+  }
+}

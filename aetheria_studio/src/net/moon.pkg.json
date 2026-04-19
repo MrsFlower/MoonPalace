@@ -1,0 +1,6 @@
+{
+  "is-main": false,
+  "import": [
+    "moonbitlang/core/encoding/utf8"
+  ]
+}

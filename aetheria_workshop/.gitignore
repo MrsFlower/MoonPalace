@@ -1,0 +1,7 @@
+_build/
+*.exe
+*.dll
+config.json
+request.json
+response.json
+.env

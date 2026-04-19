@@ -1,0 +1,12 @@
+{
+  "api_provider": "Gemini",
+  "api_url": "https://generativelanguage.googleapis.com",
+  "api_key": "YOUR_KEY_HERE",
+  "model_name": "gemini-1.5-pro",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello"
+    }
+  ]
+}

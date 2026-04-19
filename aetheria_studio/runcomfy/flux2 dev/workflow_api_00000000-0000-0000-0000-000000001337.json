@@ -1,0 +1,424 @@
+{
+  "9": {
+    "_meta": {
+      "title": "Save Image"
+    },
+    "inputs": {
+      "images": [
+        "75:65",
+        0
+      ],
+      "filename_prefix": "Flux2-Klein"
+    },
+    "class_type": "SaveImage"
+  },
+  "76": {
+    "_meta": {
+      "title": "Prompt"
+    },
+    "inputs": {
+      "value": "A lone snowman creature sitting on a pristine tropical beach, palm trees swaying behind it, turquoise water shimmering under harsh sun. The snowman is already sweating, sunglasses sliding down its face, small puddles forming at its base. Vacation colors and cheerful lighting amplify the joke. The mood is relaxed, bright, and tragically optimistic"
+    },
+    "class_type": "PrimitiveStringMultiline"
+  },
+  "78": {
+    "_meta": {
+      "title": "Save Image"
+    },
+    "inputs": {
+      "images": [
+        "77:65",
+        0
+      ],
+      "filename_prefix": "Flux2-Klein"
+    },
+    "class_type": "SaveImage"
+  },
+  "75:61": {
+    "_meta": {
+      "title": "KSamplerSelect"
+    },
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect"
+  },
+  "75:62": {
+    "_meta": {
+      "title": "Flux2Scheduler"
+    },
+    "inputs": {
+      "steps": 20,
+      "width": [
+        "75:68",
+        0
+      ],
+      "height": [
+        "75:69",
+        0
+      ]
+    },
+    "class_type": "Flux2Scheduler"
+  },
+  "75:63": {
+    "_meta": {
+      "title": "CFGGuider"
+    },
+    "inputs": {
+      "cfg": 5,
+      "model": [
+        "75:70",
+        0
+      ],
+      "negative": [
+        "75:67",
+        0
+      ],
+      "positive": [
+        "75:74",
+        0
+      ]
+    },
+    "class_type": "CFGGuider"
+  },
+  "75:64": {
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    },
+    "inputs": {
+      "noise": [
+        "75:73",
+        0
+      ],
+      "guider": [
+        "75:63",
+        0
+      ],
+      "sigmas": [
+        "75:62",
+        0
+      ],
+      "sampler": [
+        "75:61",
+        0
+      ],
+      "latent_image": [
+        "75:66",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced"
+  },
+  "75:65": {
+    "_meta": {
+      "title": "VAE Decode"
+    },
+    "inputs": {
+      "vae": [
+        "75:72",
+        0
+      ],
+      "samples": [
+        "75:64",
+        0
+      ]
+    },
+    "class_type": "VAEDecode"
+  },
+  "75:66": {
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    },
+    "inputs": {
+      "width": [
+        "75:68",
+        0
+      ],
+      "height": [
+        "75:69",
+        0
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage"
+  },
+  "75:67": {
+    "_meta": {
+      "title": "CLIP Text Encode (Negative Prompt)"
+    },
+    "inputs": {
+      "clip": [
+        "75:71",
+        0
+      ],
+      "text": ""
+    },
+    "class_type": "CLIPTextEncode"
+  },
+  "75:68": {
+    "_meta": {
+      "title": "Width"
+    },
+    "inputs": {
+      "value": 1500
+    },
+    "class_type": "PrimitiveInt"
+  },
+  "75:69": {
+    "_meta": {
+      "title": "Height"
+    },
+    "inputs": {
+      "value": 1500
+    },
+    "class_type": "PrimitiveInt"
+  },
+  "75:70": {
+    "_meta": {
+      "title": "Load Diffusion Model"
+    },
+    "inputs": {
+      "unet_name": "flux-2-klein-base-4b-fp8.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader"
+  },
+  "75:71": {
+    "_meta": {
+      "title": "Load CLIP"
+    },
+    "inputs": {
+      "type": "flux2",
+      "device": "default",
+      "clip_name": "qwen_3_4b.safetensors"
+    },
+    "class_type": "CLIPLoader"
+  },
+  "75:72": {
+    "_meta": {
+      "title": "Load VAE"
+    },
+    "inputs": {
+      "vae_name": "flux2-vae.safetensors"
+    },
+    "class_type": "VAELoader"
+  },
+  "75:73": {
+    "_meta": {
+      "title": "RandomNoise"
+    },
+    "inputs": {
+      "noise_seed": 432262096973490
+    },
+    "class_type": "RandomNoise"
+  },
+  "75:74": {
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    },
+    "inputs": {
+      "clip": [
+        "75:71",
+        0
+      ],
+      "text": [
+        "76",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode"
+  },
+  "77:61": {
+    "_meta": {
+      "title": "KSamplerSelect"
+    },
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect"
+  },
+  "77:62": {
+    "_meta": {
+      "title": "Flux2Scheduler"
+    },
+    "inputs": {
+      "steps": 4,
+      "width": [
+        "77:68",
+        0
+      ],
+      "height": [
+        "77:69",
+        0
+      ]
+    },
+    "class_type": "Flux2Scheduler"
+  },
+  "77:63": {
+    "_meta": {
+      "title": "CFGGuider"
+    },
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "77:70",
+        0
+      ],
+      "negative": [
+        "77:76",
+        0
+      ],
+      "positive": [
+        "77:74",
+        0
+      ]
+    },
+    "class_type": "CFGGuider"
+  },
+  "77:64": {
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    },
+    "inputs": {
+      "noise": [
+        "77:73",
+        0
+      ],
+      "guider": [
+        "77:63",
+        0
+      ],
+      "sigmas": [
+        "77:62",
+        0
+      ],
+      "sampler": [
+        "77:61",
+        0
+      ],
+      "latent_image": [
+        "77:66",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced"
+  },
+  "77:65": {
+    "_meta": {
+      "title": "VAE Decode"
+    },
+    "inputs": {
+      "vae": [
+        "77:72",
+        0
+      ],
+      "samples": [
+        "77:64",
+        0
+      ]
+    },
+    "class_type": "VAEDecode"
+  },
+  "77:66": {
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    },
+    "inputs": {
+      "width": [
+        "77:68",
+        0
+      ],
+      "height": [
+        "77:69",
+        0
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage"
+  },
+  "77:68": {
+    "_meta": {
+      "title": "Width"
+    },
+    "inputs": {
+      "value": 1024
+    },
+    "class_type": "PrimitiveInt"
+  },
+  "77:69": {
+    "_meta": {
+      "title": "Height"
+    },
+    "inputs": {
+      "value": 1024
+    },
+    "class_type": "PrimitiveInt"
+  },
+  "77:70": {
+    "_meta": {
+      "title": "Load Diffusion Model"
+    },
+    "inputs": {
+      "unet_name": "flux-2-klein-4b.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader"
+  },
+  "77:71": {
+    "_meta": {
+      "title": "Load CLIP"
+    },
+    "inputs": {
+      "type": "flux2",
+      "device": "default",
+      "clip_name": "qwen_3_4b.safetensors"
+    },
+    "class_type": "CLIPLoader"
+  },
+  "77:72": {
+    "_meta": {
+      "title": "Load VAE"
+    },
+    "inputs": {
+      "vae_name": "flux2-vae.safetensors"
+    },
+    "class_type": "VAELoader"
+  },
+  "77:73": {
+    "_meta": {
+      "title": "RandomNoise"
+    },
+    "inputs": {
+      "noise_seed": 432262096973490
+    },
+    "class_type": "RandomNoise"
+  },
+  "77:74": {
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    },
+    "inputs": {
+      "clip": [
+        "77:71",
+        0
+      ],
+      "text": [
+        "76",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode"
+  },
+  "77:76": {
+    "_meta": {
+      "title": "ConditioningZeroOut"
+    },
+    "inputs": {
+      "conditioning": [
+        "77:74",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "username/aetheria_studio",
+  "version": "0.1.0",
+  "deps": {
+    "moonbitlang/x": "0.4.43",
+    "moonbitlang/async": "0.17.1"
+  },
+  "targets": {
+    "native": true,
+    "wasm": false,
+    "wasm-gc": false,
+    "js": false
+  },
+  "readme": "README.mbt.md",
+  "repository": "",
+  "license": "Apache-2.0",
+  "keywords": [],
+  "description": ""
+}

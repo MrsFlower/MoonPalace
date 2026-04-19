@@ -1,0 +1,405 @@
+{
+  "nodes": [
+    {
+      "id": "node1",
+      "narrative": {
+        "text_content": "卯时，莉拉在倾斜木梁的阁楼醒来，摸到补丁裤和陶碗里凝绿霉的芜菁汤，听见楼下传来咳嗽声。墙角药草与皮甲间，灶台余温未散，天窗透进微弱晨曦，尘埃在光柱中漂浮。",
+        "mood": "沉静、略带压抑"
+      },
+      "cinematography": {
+        "environment_desc": "倾斜木梁的阁楼，墙角堆旧药草与皮甲，灶台余温未散，窗外天色鱼肚白。",
+        "scale_meters": {
+          "width": 4,
+          "height": 3,
+          "depth": 5
+        },
+        "lighting": "微弱晨曦从天窗斜照，尘埃在光柱中漂浮，灶火余光橙红如呼吸。",
+        "camera_angle": "特写→全景推镜，先拍莉拉摸黑穿衣的手部纹理，再拉远显昏暗空间与药柜干花。",
+        "image_prompt": "A slanted wooden attic with old herbs and leather armor piled in the corner, warm stove remnants, faint morning light through a skylight, dust floating in light beams, orange embers glowing like breath, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Health": 0,
+          "Sanity": 0,
+          "Trust": 0,
+          "Wealth": 0
+        },
+        "mechanic_trigger": "exploration",
+        "choices": [
+          {
+            "text": "下楼查看咳嗽声来源",
+            "target_id": "node2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node2",
+      "narrative": {
+        "text_content": "辰时，莉拉来到村口古井边，竹篮在手，井绳晃动，铁锈红披风随风微动。格蕾丝在一旁闲话嘲讽，晨雾如薄纱笼罩石栏青苔，水面泛着银鳞般的冷光。",
+        "mood": "冷淡、隔阂"
+      },
+      "cinematography": {
+        "environment_desc": "村口古井，石栏覆青苔，晨雾弥漫如薄纱。",
+        "scale_meters": {
+          "width": 6,
+          "height": 3,
+          "depth": 6
+        },
+        "lighting": "冷蓝晨光穿透雾气，水面泛银鳞。",
+        "camera_angle": "低角度仰拍井绳晃动，水面倒影切至莉拉侧脸与披风线头。",
+        "image_prompt": "Village well with moss-covered stone rails, morning fog like thin gauze, cold blue dawn light piercing mist, water surface shimmering silver scales, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Health": 0,
+          "Sanity": 0,
+          "Trust": -1,
+          "Wealth": 0
+        },
+        "mechanic_trigger": "dialogue_perception",
+        "choices": [
+          {
+            "text": "前往药草间采集",
+            "target_id": "node3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node3",
+      "narrative": {
+        "text_content": "巳时，莉拉在村中空地练习掷刀，刀嵌入祖父旧皮甲的旧伤。柴堆旁藏着劣质糖块，药草架上错落摆着梦苔与止咳草。她瞥见地图上空白处写着“林在低语”。",
+        "mood": "坚毅中带着疑惑"
+      },
+      "cinematography": {
+        "environment_desc": "村中空地置祖父旧皮甲靶，柴堆旁藏糖块；药草架错落摆梦苔、止咳草。",
+        "scale_meters": {
+          "width": 8,
+          "height": 3,
+          "depth": 8
+        },
+        "lighting": "日光渐强，阴影拉长，柴堆后暖斑跳跃。",
+        "camera_angle": "跟拍莉拉掷刀动作→慢镜刀嵌入皮甲旧伤；切至糖块特写与苦涩表情。",
+        "image_prompt": "Village clearing with grandfather's old leather armor target, hidden poor-quality candy near woodpile, medicinal herb racks with dream moss and cough grass, strong sunlight casting long shadows, warm patches behind woodpile, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Health": 0,
+          "Sanity": 0,
+          "Trust": 0,
+          "Wealth": 0
+        },
+        "mechanic_trigger": "light_puzzle",
+        "choices": [
+          {
+            "text": "回小屋研读祖父笔记",
+            "target_id": "node4"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node4",
+      "narrative": {
+        "text_content": "戌时，莉拉在小屋桌前，烛火摇曳映亮墙上祖父手绘地图与笔记。她用炭笔标注“螺旋雾气”，指尖冻僵。铜哨吹响却卡壳，窗外阴影蠕动如巨兽轮廓。",
+        "mood": "警觉、孤寂"
+      },
+      "cinematography": {
+        "environment_desc": "小屋桌前，烛火摇曳，墙上钉祖父手绘地图与笔记。",
+        "scale_meters": {
+          "width": 4,
+          "height": 3,
+          "depth": 4
+        },
+        "lighting": "烛光黄晕为主，窗外阴影蠕动似巨兽轮廓。",
+        "camera_angle": "手持晃动感主观视角，拍炭笔标注“螺旋雾气”与冻僵的指尖。",
+        "image_prompt": "Small room desk with flickering candlelight, grandfather's hand-drawn maps and notes on wall, charcoal pencil marking 'spiral fog', frozen fingertips, shadows outside window like giant beast outlines, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Health": 0,
+          "Sanity": -1,
+          "Trust": 0,
+          "Wealth": 0
+        },
+        "mechanic_trigger": "note_analysis",
+        "choices": [
+          {
+            "text": "等待次日照料奶奶",
+            "target_id": "node5"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node5",
+      "narrative": {
+        "text_content": "午时，奶奶病倒，药草房的梦苔撒地如绿梦破碎。莉拉看见奶奶嶙峋的背影与手臂青血管，热毛巾的蒸汽映亮昏暗的房间。",
+        "mood": "急迫、担忧"
+      },
+      "cinematography": {
+        "environment_desc": "药草房凌乱，梦苔撒地如绿梦破碎。",
+        "scale_meters": {
+          "width": 4,
+          "height": 3,
+          "depth": 4
+        },
+        "lighting": "自然光被云遮暗，仅桌上热毛巾蒸汽映亮。",
+        "camera_angle": "俯拍翻倒药筐→推至奶奶嶙峋背影与青血管特写。",
+        "image_prompt": "Messy herbal room with dream moss scattered on floor like broken green dreams, dim natural light blocked by clouds, steam from hot towel illuminating room, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Health": -1,
+          "Sanity": -1,
+          "Trust": 0,
+          "Wealth": 0
+        },
+        "mechanic_trigger": "herb_identification",
+        "choices": [
+          {
+            "text": "去商会与铁匠铺寻找帮助",
+            "target_id": "node6"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node6",
+      "narrative": {
+        "text_content": "申时，商会的木架货品杂乱，杰克嗤笑躲闪；铁匠铺炉火通红，汤姆瘸腿递来半块黑麦饼，眼神关切。他提到刻“信使之眼”的匕首与铜哨。",
+        "mood": "冷暖交织、试探"
+      },
+      "cinematography": {
+        "environment_desc": "商会木架货品杂乱，铁匠铺炉火通红。",
+        "scale_meters": {
+          "width": 7,
+          "height": 3,
+          "depth": 7
+        },
+        "lighting": "商会偏冷灰光，铁匠铺暖橙火光对比强烈。",
+        "camera_angle": "交叉剪辑——杰克嗤笑躲闪 vs 汤姆瘸腿递饼的眼神。",
+        "image_prompt": "Cluttered merchant stall with wooden shelves, blacksmith shop with blazing furnace, cold gray light in stall, warm orange firelight in smithy contrasting strongly, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Health": 0,
+          "Sanity": 0,
+          "Trust": 1,
+          "Wealth": 0
+        },
+        "mechanic_trigger": "dialogue_choice",
+        "choices": [
+          {
+            "text": "返回空地练习并测试铜哨",
+            "target_id": "node7"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node7",
+      "narrative": {
+        "text_content": "巳时，空地的雾气更浓，靶子皮甲似渗暗红。莉拉手颤掷刀，吹哨清鸣切入冰棱碎裂音效，铜哨首次正常发声。",
+        "mood": "紧张、觉醒"
+      },
+      "cinematography": {
+        "environment_desc": "空地雾气比前次浓，靶子皮甲似渗暗红。",
+        "scale_meters": {
+          "width": 8,
+          "height": 3,
+          "depth": 8
+        },
+        "lighting": "雾中光弥散，匕首反光锐利。",
+        "camera_angle": "慢镜莉拉手颤掷刀→吹哨清鸣切入冰棱碎裂音效。",
+        "image_prompt": "Open ground with thicker fog than before, target's leather armor seeming to seep dark red, diffuse light in mist, dagger reflecting sharply, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Health": 0,
+          "Sanity": 1,
+          "Trust": 0,
+          "Wealth": 0
+        },
+        "mechanic_trigger": "sentinel_test",
+        "choices": [
+          {
+            "text": "进入灰林探寻真相",
+            "target_id": "node8"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node8",
+      "narrative": {
+        "text_content": "雾中林间，古树盘根，雾聚成螺旋。老妪周身泛糖霜光泽伪饰发出笑声，糖霜浆果诱人。当莉拉靠近，老妪脸皮剥落露出树根躯体，铜哨上祖父刻字显现：“别信林中笑”。",
+        "mood": "惊悚、震撼"
+      },
+      "cinematography": {
+        "environment_desc": "灰林空地，古树盘根，雾聚成螺旋。",
+        "scale_meters": {
+          "width": 10,
+          "height": 4,
+          "depth": 10
+        },
+        "lighting": "阴绿滤光，树影如爪；老妪周身泛糖霜光泽伪饰。",
+        "camera_angle": "主观跟入笑声→特写糖霜浆果→快速变焦老妪脸皮剥落露树根躯体。",
+        "image_prompt": "Gray forest clearing with gnarled ancient tree roots, fog forming spirals, eerie green filtered light, tree shadows like claws, old woman with sugary frost false glow, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Health": -1,
+          "Sanity": -2,
+          "Trust": 0,
+          "Wealth": 0
+        },
+        "mechanic_trigger": "illusion_combat",
+        "choices": [
+          {
+            "text": "赶回小屋见奶奶最后一面",
+            "target_id": "node9"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node9",
+      "narrative": {
+        "text_content": "小屋内静谧，奶奶含笑离世，血染的信纸在烛光下暗红。信纸揭示商会与林之声勾结。门缝风动如林雾渗入，铜哨静静躺在桌上。",
+        "mood": "悲怆、决绝"
+      },
+      "cinematography": {
+        "environment_desc": "屋内静谧，血染信纸在烛光下暗红。",
+        "scale_meters": {
+          "width": 4,
+          "height": 3,
+          "depth": 4
+        },
+        "lighting": "烛光跳动映信纸血迹，门缝风动如林雾渗入。",
+        "camera_angle": "特写信纸字 → 拉远至奶奶含笑遗体与胸口商会铁徽。",
+        "image_prompt": "Quiet small room, blood-stained letter paper dark red under candlelight, candlelight flickering on letter, wind through door crack like forest fog seeping in, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Health": -1,
+          "Sanity": -1,
+          "Trust": 0,
+          "Wealth": 0
+        },
+        "mechanic_trigger": "memory_fragment_collect",
+        "choices": [
+          {
+            "text": "选择复仇之路",
+            "target_id": "node10A"
+          },
+          {
+            "text": "选择成为林之心的囚徒",
+            "target_id": "node10B"
+          },
+          {
+            "text": "选择守护真相",
+            "target_id": "node10C"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node10A",
+      "narrative": {
+        "text_content": "莉拉闯入商会石堡，火把红光与铁器冷光交错。她劈开铁门，发现杰克用林中毒草做实验。匕首刺入杰克心脏，记忆逐渐被林吞噬，她成为“游荡的根须”。",
+        "mood": "激烈、失落"
+      },
+      "cinematography": {
+        "environment_desc": "商会石堡阴森，铁匠锤声遥引。",
+        "scale_meters": {
+          "width": 9,
+          "height": 4,
+          "depth": 9
+        },
+        "lighting": "火把红光与铁器冷光交错。",
+        "camera_angle": "劈门慢镜→杰克实验台药草特写→匕首刺入心脏定帧。",
+        "image_prompt": "Sinister merchant stone castle, distant blacksmith hammer sounds, red torchlight and cold iron tool light interweaving, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Health": -2,
+          "Sanity": -3,
+          "Trust": 0,
+          "Wealth": 0
+        },
+        "mechanic_trigger": "combat_ending",
+        "choices": []
+      }
+    },
+    {
+      "id": "node10B",
+      "narrative": {
+        "text_content": "莉拉走入螺旋雾径，幻象中祖父被树根缠绕。幽蓝雾光与树根脉动的荧光包围她。她将停于出生年的怀表刺入胸口，牺牲自我换来记忆永续，成为林的记忆桥。",
+        "mood": "悲壮、宁静"
+      },
+      "cinematography": {
+        "environment_desc": "螺旋雾气林径，幻象祖父被树根缠绕。",
+        "scale_meters": {
+          "width": 10,
+          "height": 4,
+          "depth": 10
+        },
+        "lighting": "幽蓝雾光与树根脉动的荧光。",
+        "camera_angle": "主观穿越雾径→怀表刺入胸口的闪回慢镜。",
+        "image_prompt": "Spiral fog forest path, illusion of grandfather wrapped in tree roots, eerie blue fog light and pulsating fluorescent tree roots, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Health": -3,
+          "Sanity": 2,
+          "Trust": 0,
+          "Wealth": 0
+        },
+        "mechanic_trigger": "sacrifice_ending",
+        "choices": []
+      }
+    },
+    {
+      "id": "node10C",
+      "narrative": {
+        "text_content": "莉拉回到林边小屋，忍冬藤攀墙，地图刻字处泛光。她在暮色金橙中刻下新的地图笔触，吹哨惊起飞鸟。她守护真相，遗忘自我，但名字永刻林心。",
+        "mood": "温暖、永恒"
+      },
+      "cinematography": {
+        "environment_desc": "忍冬藤攀墙的小屋，地图刻字处泛光。",
+        "scale_meters": {
+          "width": 5,
+          "height": 3,
+          "depth": 5
+        },
+        "lighting": "暮色金橙，藤蔓剪影如致敬之手。",
+        "camera_angle": "刻地图笔触特写→吹哨惊鸟的全景。",
+        "image_prompt": "Small house with honeysuckle vines climbing walls, glowing carved words on map, golden-orange twilight, vine shadows like saluting hands, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Health": 0,
+          "Sanity": 1,
+          "Trust": 2,
+          "Wealth": 0
+        },
+        "mechanic_trigger": "guardian_ending",
+        "choices": []
+      }
+    }
+  ]
+}

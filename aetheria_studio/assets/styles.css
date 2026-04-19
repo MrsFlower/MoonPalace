@@ -1,0 +1,287 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #252526;
+    border-right: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-title {
+    padding: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #569cd6;
+    border-bottom: 1px solid #333;
+    text-align: center;
+}
+
+.menu-item {
+    padding: 15px 20px;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+    transition: background-color 0.2s;
+}
+
+.menu-item:hover {
+    background-color: #2a2d2e;
+}
+
+.menu-item.active {
+    background-color: #37373d;
+    border-left: 4px solid #007acc;
+    color: white;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #1e1e1e;
+    overflow: auto;
+    position: relative;
+}
+
+.tab-content {
+    display: none;
+    padding: 20px;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.tab-content.active {
+    display: flex;
+    flex-direction: column;
+}
+
+h2 {
+    color: #dcdcaa;
+    margin-top: 0;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    color: #9cdcfe;
+}
+
+textarea, input[type="text"], input[type="password"], select {
+    width: 100%;
+    padding: 10px;
+    background-color: #3c3c3c;
+    color: #d4d4d4;
+    border: 1px solid #555;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+button {
+    background-color: #0e639c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+    background-color: #1177bb;
+}
+
+.btn-secondary {
+    background-color: #4CAF50;
+}
+.btn-secondary:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+/* Generator View Specifics */
+.generator-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.top-section {
+    flex: 0 0 auto;
+}
+
+.bottom-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+}
+
+.step-tabs {
+    display: flex;
+    background-color: #2d2d30;
+    border-bottom: 1px solid #3f3f46;
+}
+
+.step-tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: #aaa;
+    outline: none;
+}
+
+.step-tab:hover {
+    color: #fff;
+}
+
+.step-tab.active {
+    color: #fff;
+    border-bottom: 2px solid #007acc;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    background-color: #888;
+}
+
+.status-dot.yellow { background-color: #f1c40f; box-shadow: 0 0 5px #f1c40f; }
+.status-dot.green { background-color: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
+.status-dot.red { background-color: #e74c3c; box-shadow: 0 0 5px #e74c3c; }
+
+.step-content-view {
+    padding: 15px;
+    background-color: #252526;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+    min-height: 300px;
+    white-space: pre-wrap;
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 14px;
+    color: #d4d4d4;
+    overflow-y: auto;
+    resize: vertical;
+}
+
+.progress-container {
+    margin-top: 10px;
+    background-color: #333;
+    border-radius: 4px;
+    height: 10px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: #007acc;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.status-text {
+    margin-top: 5px;
+    font-size: 12px;
+    color: #888;
+}
+
+/* Preview View Specifics */
+.preview-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.game-view {
+    width: 800px;
+    height: 600px;
+    background-color: #000;
+    position: relative;
+    border: 2px solid #333;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    overflow: hidden;
+}
+
+.game-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.game-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.game-dialog {
+    color: white;
+    font-size: 18px;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 2px black;
+    max-height: 80px;
+    overflow-y: auto;
+}
+
+.game-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.game-choice-btn {
+    background-color: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 8px 15px;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.game-choice-btn:hover {
+    background-color: rgba(255,255,255,0.3);
+}
+
+.error-msg {
+    color: #f44336;
+}
+.success-msg {
+    color: #4CAF50;
+}

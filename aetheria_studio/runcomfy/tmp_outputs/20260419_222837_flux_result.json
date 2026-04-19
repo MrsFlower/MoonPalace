@@ -1,0 +1,30 @@
+{
+  "request_id": "79bc1b8d-2520-4e80-8952-4da102a40b1c",
+  "status": "succeeded",
+  "log_url": "https://cdn.runcomfy.com/logs/6dcc2ea8-5331-4925-b2f4-208bdb7445ab/comfyui.txt",
+  "outputs": {
+    "9": {
+      "images": [
+        {
+          "filename": "Flux2-Klein_00003_.png",
+          "subfolder": "",
+          "type": "output",
+          "url": "https://serverless-api-storage.runcomfy.net/deployment_requests/79bc1b8d-2520-4e80-8952-4da102a40b1c/output/Flux2-Klein_00003_.png"
+        }
+      ]
+    },
+    "78": {
+      "images": [
+        {
+          "filename": "Flux2-Klein_00004_.png",
+          "subfolder": "",
+          "type": "output",
+          "url": "https://serverless-api-storage.runcomfy.net/deployment_requests/79bc1b8d-2520-4e80-8952-4da102a40b1c/output/Flux2-Klein_00004_.png"
+        }
+      ]
+    }
+  },
+  "created_at": "2026-04-19T14:28:40.280204+00:00",
+  "finished_at": "2026-04-19T14:33:04.446520+00:00",
+  "instance_id": "6dcc2ea8-5331-4925-b2f4-208bdb7445ab"
+}

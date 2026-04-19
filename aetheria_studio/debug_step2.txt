@@ -1,0 +1,34 @@
+[Paranoia] (Zhang San's level of anxiety and suspicion)
+- [Subtlety] (How inconspicuous Zhang San's actions are; lower is worse)
+- [Security] (Zhang San's false sense of how safe his silver is)
+
+# Node List
+
+## Node 1: The Heavy Box
+**Description:** In his dusty workshop, Zhang San stares at the box of 300 silver taels, his life's savings, and feels a wave of intense paranoia wash over him.
+**Choices:**
+- [This house has too many ears. I must bury it outside!] (+Paranoia, +Security, -Subtlety) -> Leads to Node 3
+- [Maybe I can find a clever place to hide it right here in the workshop.] (-Paranoia, +Subtlety) -> Leads to Node 2
+
+## Node 2: The Indoor Hiding Spot
+**Description:** Zhang San decides the safest place is close by, and scans his workshop for the perfect hiding spot away from prying eyes.
+**Choices:**
+- [Hide it beneath the loose floorboard under the carving bench.] (+Security) -> Leads to Node 9
+
+## Node 3: The Backyard Survey
+**Description:** Standing in his backyard, Zhang San sees potential thieves in every rustling leaf and chirping bird, searching for the perfect burial ground.
+**Choices:**
+- [Dig a hole in the quiet, overgrown corner by the wall; no one ever looks there.] (+Subtlety) -> Leads to Node 4
+- [Bury it right under the big willow tree in the center; it's so obvious, it's brilliant!] (+Paranoia, +Security, -Subtlety) -> Leads to Node 5
+
+## Node 4: The Quiet Dig
+**Description:** After burying the silver in the inconspicuous corner, Zhang San's paranoia flares up, convincing him that its very subtlety is suspicious.
+**Choices:**
+- [It's too quiet! It needs a distraction... a sign to throw them off the scent!] (+Paranoia, -Subtlety) -> Leads to Node 5
+
+## Node 5: The Master Stroke
+**Description:** With the silver now buried under the willow tree, Zhang San feels a surge of genius as he prepares the final, crucial step of his plan.
+**Choices:**
+- [Use my finest ink and brush to write a sign: "No 300 taels of silver are buried here."] (+Security, --Subtlety) -> Leads to Node 7
+- [Build a fierce-looking scarecrow to stand guard over the spot.] (+Security, -Subtlety) -> Leads to Node 8
+- [No, no, that's enough. A true master knows when to stop. I'll just leave it as is.]

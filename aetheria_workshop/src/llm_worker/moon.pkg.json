@@ -1,0 +1,14 @@
+{
+  "is-main": true,
+  "import": [
+    "username/aetheria_workshop/src/net",
+    "moonbitlang/core/encoding/utf8",
+    "moonbitlang/core/json",
+    "moonbitlang/core/env"
+  ],
+  "link": {
+    "native": {
+      "cc-link-flags": "src/net/net_wrapper.c -lwininet"
+    }
+  }
+}

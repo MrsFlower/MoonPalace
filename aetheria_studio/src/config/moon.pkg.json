@@ -1,0 +1,6 @@
+{
+  "import": [
+    "moonbitlang/x/fs",
+    "moonbitlang/core/json"
+  ]
+}

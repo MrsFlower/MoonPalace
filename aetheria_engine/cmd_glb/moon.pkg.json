@@ -1,0 +1,19 @@
+{
+  "is-main": true,
+  "import": [
+    "moonbitlang/core/math",
+    "moonbitlang/core/json",
+    "aetheria/engine/src/raylib"
+  ],
+  "link": {
+    "wasm": {
+      "exports": [
+        "moonbitlang/core/builtin"
+      ],
+      "heap-base": 25600
+    },
+    "native": {
+      "cc-link-flags": "src/raylib/raylib_wrapper.c -I../raylib/raylib-5.0_win64_mingw-w64/include -L../raylib/raylib-5.0_win64_mingw-w64/lib -lraylib -lgdi32 -lwinmm"
+    }
+  }
+}

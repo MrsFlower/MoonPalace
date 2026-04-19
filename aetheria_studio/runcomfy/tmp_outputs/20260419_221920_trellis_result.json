@@ -1,0 +1,22 @@
+{
+  "request_id": "02b91415-9053-455a-81e4-3a6fef8f127b",
+  "status": "failed",
+  "error": [
+    {
+      "error": "ComfyUIExecutionError",
+      "details": "{'prompt_id': '9625ec3b-fc12-43c8-b884-1b2e744c664a', 'node_id': '279', 'node_type': 'Trellis2LoadImageWithTransparency', 'executed': ['139'], 'exception_message': \"cannot identify image file '/workspace/ComfyUI/input/.serverless/tmp7a1ph13e.png'\\n\", 'exception_type': 'PIL.UnidentifiedImageError', 'traceback': ['  File \"/workspace/ComfyUI/execution.py\", line 516, in execute\\n    output_data, output_ui, has_subgraph, has_pending_tasks = await get_output_data(prompt_id, unique_id, obj, input_data_all, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)\\n                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n', '  File \"/workspace/ComfyUI/execution.py\", line 330, in get_output_data\\n    return_values = await _async_map_node_over_list(prompt_id, unique_id, obj, input_data_all, obj.FUNCTION, allow_interrupt=True, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)\\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n', '  File \"/workspace/ComfyUI/execution.py\", line 304, in _async_map_node_over_list\\n    await process_inputs(input_dict, i)\\n', '  File \"/workspace/ComfyUI/execution.py\", line 292, in process_inputs\\n    result = f(**inputs)\\n             ^^^^^^^^^^^\\n', '  File \"/workspace/ComfyUI/custom_nodes/ComfyUI-Trellis2/nodes.py\", line 484, in load_image\\n    img = node_helpers.pillow(Image.open, image_path)\\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n', '  File \"/workspace/ComfyUI/node_helpers.py\", line 31, in pillow\\n    x = fn(arg)\\n        ^^^^^^^\\n', '  File \"/opt/conda/lib/python3.12/site-packages/PIL/Image.py\", line 3498, in open\\n    raise UnidentifiedImageError(msg)\\n'], 'current_inputs': {'image': ['.serverless/tmp7a1ph13e.png']}, 'current_outputs': ['278', '141', '140', '279', '142', '149', '139'], 'timestamp': 1776608755889}",
+      "debugInfo": "This usually means a node in your workflow threw an exception at runtime. Common causes include GPU out-of-memory (torch.OutOfMemoryError) from large resolution/batch/steps, unreadable or corrupt media (PIL.UnidentifiedImageError), malformed/partial URLs, or type/shape mismatches between connected nodes. Typical symptoms are CUDA OOM messages, decode errors, or Attribute/Type/Index errors from the node code. To fix: identify the failing node; for OOM, lower resolution/batch/steps and/or reduce concurrency. If it still OOMs, switch to a machine with more GPU VRAM (or more system RAM for CPU-bound steps).",
+      "errorCode": 10011
+    },
+    {
+      "error": "InternalServerError",
+      "details": "Unexpected internal failure",
+      "debugInfo": "Request failed due to an unexpected internal error. Retry later, or test the workflow in ComfyUI Cloud to confirm it runs successfully before retrying.",
+      "errorCode": 10000
+    }
+  ],
+  "log_url": "https://cdn.runcomfy.com/logs/783ad59b-a308-443a-b1ec-a3c6acc9373f/comfyui.txt",
+  "created_at": "2026-04-19T14:23:31.983777+00:00",
+  "finished_at": "2026-04-19T14:26:05.269691+00:00",
+  "instance_id": "783ad59b-a308-443a-b1ec-a3c6acc9373f"
+}

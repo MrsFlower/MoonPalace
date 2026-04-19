@@ -1,0 +1,5 @@
+{
+  "import": [
+    "username/aetheria_workshop/src/raylib"
+  ]
+}

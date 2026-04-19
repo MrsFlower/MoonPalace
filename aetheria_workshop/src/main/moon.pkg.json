@@ -1,0 +1,17 @@
+{
+  "is-main": true,
+  "import": [
+    "username/aetheria_workshop/src/raylib",
+    "username/aetheria_workshop/src/ui",
+    "username/aetheria_workshop/src/config",
+    "username/aetheria_workshop/src/net",
+    "moonbitlang/core/json",
+    "moonbitlang/core/encoding/utf8",
+    "moonbitlang/x/fs"
+  ],
+  "link": {
+    "native": {
+      "cc-link-flags": "src/raylib/raylib_wrapper.c src/net/net_wrapper.c -I../raylib/raylib-5.0_win64_mingw-w64/include -L../raylib/raylib-5.0_win64_mingw-w64/lib -lwininet -lraylib -lgdi32 -lwinmm"
+    }
+  }
+}

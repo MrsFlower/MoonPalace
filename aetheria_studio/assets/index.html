@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoonPalace Studio</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-title">MoonPalace Studio</div>
+        <div class="menu-item active" onclick="app.showTab('generator')" id="nav-generator">Generator</div>
+        <div class="menu-item" onclick="app.showTab('preview')" id="nav-preview">2D Preview</div>
+        <div class="menu-item" onclick="app.showTab('3d-model')" id="nav-3d-model">3D Model Generation</div>
+        <div class="menu-item" onclick="app.showTab('settings')" id="nav-settings">Settings</div>
+    </div>
+
+    <div class="main-content">
+        <!-- Generator Tab -->
+        <div id="generator" class="tab-content active">
+            <div class="generator-layout">
+                <div class="top-section">
+                    <h2 id="title-pipeline">Game Generator Pipeline</h2>
+                    <div class="form-group">
+                        <label for="prompt" id="lbl-prompt">Game Concept / Prompt:</label>
+                        <textarea id="prompt" rows="3" placeholder="A lone knight exploring an abandoned castle..."></textarea>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <button id="btnGenerate" onclick="app.startConcept()">1. Generate Concept</button>
+                        <button id="btnStartPipeline" class="btn-secondary" onclick="app.startPipeline()" style="margin-left: 10px;" disabled>2. Confirm & Start Pipeline</button>
+                        <button id="btnGenAssets" class="btn-secondary" onclick="app.generateAllAssets()" style="margin-left: 10px;" disabled>3. Batch Generate 2D Assets</button>
+                        <button id="btnLoadProject" class="btn-secondary" onclick="app.loadProject()" style="margin-left: 10px; float: right;">Load Existing Project</button>
+                    </div>
+                    <div class="progress-container" id="progressContainer" style="display:none;">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <div class="status-text" id="statusText">Ready.</div>
+                </div>
+
+                <div class="bottom-section">
+                    <div class="step-tabs">
+                        <button class="step-tab active" onclick="app.showStepContent(0)" id="tab-step0"><span class="status-dot" id="dot-step0"></span>Concept</button>
+                        <button class="step-tab" onclick="app.showStepContent(1)" id="tab-step1"><span class="status-dot" id="dot-step1"></span>World Bible</button>
+                        <button class="step-tab" onclick="app.showStepContent(2)" id="tab-step2"><span class="status-dot" id="dot-step2"></span>Blueprint</button>
+                        <button class="step-tab" onclick="app.showStepContent(3)" id="tab-step3"><span class="status-dot" id="dot-step3"></span>Script</button>
+                        <button class="step-tab" onclick="app.showStepContent(4)" id="tab-step4"><span class="status-dot" id="dot-step4"></span>JSON</button>
+                        <button class="step-tab" onclick="app.showStepContent(5)" id="tab-step5"><span class="status-dot" id="dot-step5"></span>2D Image Prompts</button>
+                        <button class="step-tab" onclick="app.showStepContent(6)" id="tab-step6"><span class="status-dot" id="dot-step6"></span>2D Queue</button>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <span id="stepErrorMsg" style="color: #ff5555; font-size: 13px;"></span>
+                        <button id="btnRegenerateStep" class="btn-secondary" style="display: none; padding: 5px 10px; font-size: 12px;" onclick="app.regenerateCurrentStep()">Retry This Step</button>
+                    </div>
+                    <textarea class="step-content-view" id="stepContentView" onblur="app.saveStepContent()" placeholder="Content will appear here..."></textarea>
+                    
+                    <div id="step-content-6" style="display:none; background: #1e1e1e; padding: 15px; border-radius: 5px; height: 100%; overflow-y: auto;">
+                        <div id="image-queue-list" style="display: flex; flex-direction: column; gap: 10px;">
+                            <div style="color: #888;">No image generation task is currently running. Start batch generation to see progress.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2D Preview Tab -->
+        <div id="preview" class="tab-content">
+            <div class="preview-container">
+                <h2 id="title-preview">Game Preview Engine</h2>
+                <div style="margin-bottom: 10px;">
+                    <button id="btnStartGame" onclick="app.startGamePreview()">Start Game / Refresh</button>
+                    <span id="preview-status" style="margin-left: 10px; color: #888;"></span>
+                </div>
+                <div class="game-view">
+                    <img id="game-bg" class="game-bg" src="" style="display:none;" />
+                    <div class="game-overlay" id="game-overlay" style="display:none;">
+                        <div class="game-dialog" id="game-dialog">Loading...</div>
+                        <div class="game-choices" id="game-choices"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3D Model Tab -->
+        <div id="3d-model" class="tab-content">
+            <h2 id="title-3d-model">3D Model Generation & Game Preview</h2>
+            <div style="margin-bottom: 10px; display: flex; gap: 10px;">
+                <button id="btnGenerate3D" onclick="app.generateAll3DAssets()">Generate 3D Models</button>
+                <button id="btnLoad3D" onclick="app.load3DAssets()" class="btn-secondary">Load 3D Assets</button>
+                <button id="btnStart3DGame" onclick="app.start3DGamePreview()" class="btn-secondary">Start 3D Game</button>
+            </div>
+            <div id="model-queue-container" style="background: #1e1e1e; padding: 15px; border-radius: 5px; height: calc(100vh - 120px); overflow-y: auto;">
+                <div id="model-queue-list" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="color: #888;">No 3D generation task is currently running.</div>
+                </div>
+                
+                <h3 style="margin-top: 20px; color: #dcdcaa;">3D Game Engine</h3>
+                <div id="three-container" style="width: 100%; height: 500px; background: #000; border: 1px solid #444; margin-top: 10px; position: relative;">
+                    <div id="three-placeholder" style="color: #888; text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;">No 3D model loaded.</div>
+                    <div class="game-overlay" id="game-overlay-3d" style="display:none; position: absolute; bottom: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20;">
+                        <div class="game-dialog" id="game-dialog-3d" style="pointer-events: auto;">Loading...</div>
+                        <div class="game-choices" id="game-choices-3d" style="pointer-events: auto;"></div>
+                    </div>
+                </div>
+                <div id="model-selector" style="margin-top: 10px; display: flex; gap: 5px; flex-wrap: wrap;"></div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <h2 id="title-settings">Configuration</h2>
+            <div style="max-width: 600px;">
+                <div class="form-group">
+                    <label for="cfg-provider" id="lbl-provider">API Provider</label>
+                    <select id="cfg-provider" onchange="app.switchProvider()">
+                        <option value="Gemini">Google Gemini</option>
+                        <option value="OpenAI">OpenAI Compatible</option>
+                    </select>
+                </div>
+                <hr style="border-color: #333; margin: 20px 0;">
+                <h3 id="cfg-provider-title" style="color: #dcdcaa; font-size: 16px;">OpenAI Compatible Settings</h3>
+                <div class="form-group">
+                    <label id="lbl-struct-url">Structural API URL (For JSON gen)</label>
+                    <input type="text" id="cfg-struct-url" />
+                </div>
+                <div class="form-group">
+                    <label id="lbl-struct-key">Structural API Key</label>
+                    <input type="password" id="cfg-struct-key" placeholder="Enter API Key or set environment variable" />
+                </div>
+                <div class="form-group">
+                    <label id="lbl-struct-model">Structural Model Name</label>
+                    <input type="text" id="cfg-struct-model" />
+                </div>
+                <button id="btnTestStruct" onclick="app.testApi('struct')" class="btn-secondary" style="margin-bottom: 20px;">Test Structural API</button>
+                <hr style="border-color: #333; margin: 20px 0;">
+                <div class="form-group">
+                    <label id="lbl-create-url">Creative API URL (For text gen)</label>
+                    <input type="text" id="cfg-create-url" />
+                </div>
+                <div class="form-group">
+                    <label id="lbl-create-key">Creative API Key</label>
+                    <input type="password" id="cfg-create-key" placeholder="Enter API Key or set environment variable" />
+                </div>
+                <div class="form-group">
+                    <label id="lbl-create-model">Creative Model Name</label>
+                    <input type="text" id="cfg-create-model" />
+                </div>
+                <button id="btnTestCreate" onclick="app.testApi('create')" class="btn-secondary" style="margin-bottom: 20px;">Test Creative API</button>
+                <hr style="border-color: #333; margin: 20px 0;">
+                <h3 id="lbl-system" style="color: #dcdcaa; font-size: 16px;">System Settings</h3>
+                <div class="form-group">
+                    <label id="lbl-comfy-mode">ComfyUI Generation Mode</label>
+                    <select id="cfg-comfy-mode" onchange="app.switchComfyMode()">
+                        <option value="local">Local ComfyUI</option>
+                        <option value="runcomfy">RunComfy Cloud API</option>
+                    </select>
+                </div>
+                <div class="form-group" id="group-comfy-url">
+                    <label id="lbl-comfy">Local ComfyUI Server URL</label>
+                    <input type="text" id="cfg-comfy-url" />
+                </div>
+                <div class="form-group" id="group-runcomfy-key" style="display:none;">
+                    <label id="lbl-runcomfy-key">RunComfy API Token</label>
+                    <input type="password" id="cfg-runcomfy-key" placeholder="Enter RunComfy API Token" />
+                </div>
+                <div class="form-group">
+                    <label id="lbl-lang">Language</label>
+                    <select id="cfg-lang" onchange="app.switchLanguage()">
+                        <option value="ZH">中文 (Chinese)</option>
+                        <option value="EN">English</option>
+                    </select>
+                </div>
+                
+                <button id="btnSave" onclick="app.saveConfig()" style="margin-top: 10px;">Save Configuration</button>
+                <div id="cfg-status" style="margin-top: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/three.min.js"></script>
+    <script src="js/GLTFLoader.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="webui.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

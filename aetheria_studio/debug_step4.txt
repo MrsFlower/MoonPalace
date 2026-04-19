@@ -1,0 +1,297 @@
+
+{
+  "nodes": [
+    {
+      "id": "1",
+      "narrative": {
+        "text_content": "在他的落满灰尘的工坊里，张三盯着装有三百两银子的箱子，那是他毕生的积蓄。一阵强烈的偏执感向他袭来。",
+        "mood": "偏执，焦虑，恐惧"
+      },
+      "cinematography": {
+        "environment_desc": "一个陈旧、杂乱的中国传统工坊，木制工具和半成品石雕堆积如山。",
+        "scale_meters": {
+          "width": 6,
+          "height": 4,
+          "depth": 5
+        },
+        "lighting": "从高窗射入的微弱光线，灰尘在光束中漂浮，营造出一种被忽视的沉重感。",
+        "image_prompt": "Stylized traditional Chinese ink wash painting of a dusty, cluttered stone carving workshop, with old tools and materials, subtly hinting at a hidden object. No protagonist. Wang Er's silhouette is faintly visible outside a window, observing. The scene evokes quiet tension and suspicion, static fixed perspective, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {},
+        "mechanic_trigger": "",
+        "choices": [
+          {
+            "text": "这屋子耳目众多，我必须把它埋在外面！",
+            "target_id": "3",
+            "state_changes": {
+              "Paranoia": 1,
+              "Security": 1,
+              "Subtlety": -1
+            }
+          },
+          {
+            "text": "或许我可以在这工坊里找个巧妙的地方藏起来。",
+            "target_id": "2",
+            "state_changes": {
+              "Paranoia": -1,
+              "Subtlety": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "2",
+      "narrative": {
+        "text_content": "“对，最危险的地方就是最安全的地方，”张三喃喃自语，试图说服自己。他的目光如同一只受惊的田鼠，飞快地扫过工坊的每一个角落。那堆积如山的废弃石料？不行，太容易被翻动。房梁之上？不行，自己爬上爬下动静太大。\n\n他的视线最终落在了自己那张雕刻用的长凳下。那里的地板有一块砖石微微松动，是他多年前为了垫平凳脚随手弄的。“就是这里了！”他心中一喜，“谁会想到一个砚雕师傅会把钱藏在自己天天踩踏的脚下呢？”他觉得这个主意简直是神来之笔。他立刻行动，用刻刀撬开地砖，将木箱小心翼翼地放进去，再把地砖严丝合缝地盖回去，甚至还用些许石粉填补了缝隙。他满意地拍了拍手上的灰，长舒了一口气。",
+        "mood": "自以为是，紧张，最终感到一丝放松"
+      },
+      "cinematography": {
+        "environment_desc": "固定的低角度镜头，仿佛从地面仰视。画面主体是那张厚重的雕刻长凳，凳腿的阴影在地上拉得很长。张三的下半身进入画面，他跪在地上，动作夸张而鬼祟。当他撬开地砖时，一束灰尘在光线中升腾而起。光线从高窗射入，在地板上形成一块明亮的光斑，而藏宝的地砖恰好位于光斑与阴影的交界处，暗示着这个选择的暧昧不明。",
+        "scale_meters": {
+          "width": 4,
+          "height": 3,
+          "depth": 3
+        },
+        "lighting": "从高窗射入的光线，在地板上形成一块明亮的光斑，而藏宝的地砖恰好位于光斑与阴影的交界处，暗示着这个选择的暧昧不明。",
+        "image_prompt": "Stylized traditional Chinese ink wash painting of a low-angle view of a cluttered workshop floor beneath a heavy carving bench, with a loose floorboard being subtly tampered with. No protagonist. A glimpse of Wang Er's shadow outside the window, static fixed perspective, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {},
+        "mechanic_trigger": "",
+        "choices": [
+          {
+            "text": "把银子藏在雕刻台下的活板地砖里。",
+            "target_id": "9",
+            "state_changes": {
+              "Security": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "3",
+      "narrative": {
+        "text_content": "张三抱着沉重的木箱，像做贼一样溜进了自家的后院。这个他熟悉了半辈子的地方，此刻却显得危机四伏。风吹过院里那棵歪脖子柳树，沙沙作响，在他听来，简直就是隔壁王二在窃窃私语。一只蝉在墙头声嘶力竭地鸣叫，他觉得那是在向全村广播：“张三有钱啦！”\n\n他的目光扫过院子。墙角那丛野草长得比人还高，是个不错的藏匿点。水井边呢？不行，每天都有人来打水。院子正中央，柳树底下？这个念头一闪而过，他立刻否定了自己。“太显眼了，谁会把宝贝藏在最显眼的地方？除非……”一个大胆的想法在他脑中萌生。他与邻居王二家仅一墙之隔，他甚至能看到王二正坐在自家门廊下，眯着眼，像一尊雕像般一动不动地看着河面。张三的心猛地一紧，感觉王二那看似悠闲的目光，其实早已穿透了墙壁，盯上了自己怀里的木箱。",
+        "mood": "极度偏执，紧张，疑神疑鬼"
+      },
+      "cinematography": {
+        "environment_desc": "固定的远景镜头，捕捉整个后院的全貌。画面风格空灵，远处的山和天空用大片湿润的淡墨（渲染）画成。近景的院墙、柳树和水井则用更清晰的线条（勾勒）描绘。张三抱着木箱的身影在空旷的院子里显得渺小又滑稽。在画面的一角，可以通过院墙的破损处，隐约看到邻居王二的一个模糊侧影。",
+        "scale_meters": {
+          "width": 15,
+          "height": 10,
+          "depth": 12
+        },
+        "lighting": "柔和的阴天散射光，让所有物体的影子都变得模糊不清，增加了环境的神秘感和不确定性。",
+        "image_prompt": "Stylized traditional Chinese ink wash painting of a spacious, quiet backyard with an old crooked willow tree, a water well, and overgrown weeds by a wall. No protagonist. Neighbor Wang Er's subtle silhouette is visible through a gap in the wall, observing the scene. The overall atmosphere is watchful and subtly ominous, static fixed perspective, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {},
+        "mechanic_trigger": "",
+        "choices": [
+          {
+            "text": "在靠墙那片安静又杂草丛生的角落里挖个坑，那里从没人注意。",
+            "target_id": "4",
+            "state_changes": {
+              "Subtlety": 1
+            }
+          },
+          {
+            "text": "就埋在院子正中央的大柳树下，最显眼的地方反而最安全，这叫大智若愚！",
+            "target_id": "5",
+            "state_changes": {
+              "Paranoia": 1,
+              "Security": 1,
+              "Subtlety": -1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "4",
+      "narrative": {
+        "text_content": "张三选择了墙角。他挥动铁锹，泥土发出沉闷的噗噗声。这里确实隐蔽，连风都吹不进来。他三下五除二便挖好一个深坑，将木箱埋了进去，又仔细地铺上草皮，伪装得天衣无缝。他站起身，拍了拍手，本该感到安心，但一种新的恐慌却攥住了他的心。\n\n“太安静了……”他环顾四周，这片角落死气沉沉，与院子其他地方的生机格格不入。“这种刻意的安静，本身就是一种破绽！就像一个不会说谎的人，一说谎就不敢看别人的眼睛。王二那个老狐狸，他一看这地方如此‘正常’，肯定会猜到下面有鬼！”张三的额头又渗出了汗珠。他觉得自己刚才的决定愚蠢至极。“不行，我必须做点什么，弄出点动静，转移他的注意力！”",
+        "mood": "焦虑，反悔，新的偏执"
+      },
+      "cinematography": {
+        "environment_desc": "固定的中近景镜头，聚焦于院子的角落。高大的院墙投下大片阴影，让这个角落显得格外幽暗。杂草用纷乱的笔触画出，营造出一种被遗忘的氛围。整个场景几乎没有声音，只有张三越来越响的心跳声（通过音效表现）。",
+        "scale_meters": {
+          "width": 8,
+          "height": 6,
+          "depth": 7
+        },
+        "lighting": "高大的院墙投下大片阴影，让这个角落显得格外幽暗。",
+        "image_prompt": "Stylized traditional Chinese ink wash painting of a dim, overgrown backyard corner with tall walls casting deep shadows, suggesting a hidden spot. No protagonist. Neighbor Wang Er's shadow subtly visible on the wall, observing. The scene is quiet and tense, static fixed perspective, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {},
+        "mechanic_trigger": "",
+        "choices": [
+          {
+            "text": "这里太安静了！需要一个幌子……一块能引开他们注意的牌子！",
+            "target_id": "5",
+            "state_changes": {
+              "Paranoia": 1,
+              "Subtlety": -1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "5",
+      "narrative": {
+        "text_content": "最终，张三还是把银子挖了出来，重新埋在了院子中央那棵歪脖子柳树下。每一次铁锹与土地的碰撞，都发出了响亮的“喀嚓”声，仿佛在为他的愚蠢行径伴奏。当最后一捧土盖上时，他非但没有焦虑，反而感到一阵前所未有的兴奋。他觉得自己正在下一盘精妙绝伦的棋。\n\n“埋在这里，所有人都看得见。看见了，反而就不会怀疑了。这叫‘阳谋’！”他得意地想。但他觉得还不够，这步棋还差最后一道保险，一个能够彻底迷惑所有潜在盗贼的“神来之笔”。他站直了身子，环顾四周，院子里的水桶、废木料、甚至挂在晾衣绳上的旧衣服，都成了他构思伟大计划的道具。他感觉自己此刻不是一个砚雕师傅，而是一位运筹帷幄的将军。",
+        "mood": "自鸣得意，狂妄，充满“智慧”的假象"
+      },
+      "cinematography": {
+        "environment_desc": "固定的全景镜头，与【节点3】相似，但视角更低，更具戏剧性。柳树位于画面的黄金分割点上，新翻的泥土在灰褐色的地面上显得格外突兀，像一块丑陋的补丁。隔壁院墙后，王二的身影似乎微微动了一下，仿佛只是为了换个更舒服的坐姿。",
+        "scale_meters": {
+          "width": 15,
+          "height": 10,
+          "depth": 12
+        },
+        "lighting": "夕阳下拉得又细又长的影子，显得滑稽可笑，烘托出人物的自作聪明。",
+        "image_prompt": "Stylized traditional Chinese ink wash painting of a wide, sunlit backyard with a prominent crooked willow tree in the center, underneath which lies a freshly dug mound of earth. No protagonist. Neighbor Wang Er's subtle, observant figure is visible behind the adjacent wall. The scene is imbued with a sense of comedic irony and impending discovery, static fixed perspective, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {},
+        "mechanic_trigger": "",
+        "choices": [
+          {
+            "text": "用我最好的墨和毛笔写一块牌子：“此地无银三百两”。",
+            "target_id": "7",
+            "state_changes": {
+              "Security": 1,
+              "Subtlety": -2
+            }
+          },
+          {
+            "text": "做一个凶神恶煞的稻草人，让它守在这里。",
+            "target_id": "8",
+            "state_changes": {
+              "Security": 1,
+              "Subtlety": -1
+            }
+          },
+          {
+            "text": "不，不，够了。真正的大师懂得适可而止。就这样吧。",
+            "target_id": "6"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6",
+      "narrative": {
+        "text_content": "张三最终决定不再多此一举，他认为保持原样是最好的伪装。他每天都会偷偷观察柳树下的土堆，确信无人察觉。然而，他没有注意到，他的目光早已出卖了他。王二在他家的门廊下，悠闲地喝着茶，却总能“不经意”地捕捉到张三紧张的视线。几天后，当张三再次查看时，土堆完好如初，但他脚下踏到的，却是一张熟悉的纸条……",
+        "mood": "自欺，讽刺，最终的失落"
+      },
+      "cinematography": {
+        "environment_desc": "夜晚，昏暗的后院。柳树下的土堆依旧，但近景地面上躺着一张被风吹动的纸条。",
+        "scale_meters": {
+          "width": 10,
+          "height": 7,
+          "depth": 8
+        },
+        "lighting": "清冷的月光洒在后院，为场景增添了一丝悲凉和神秘。",
+        "image_prompt": "Stylized traditional Chinese ink wash painting of a dim, moonlit backyard at night, with a prominent willow tree and an undisturbed earth mound. No protagonist. A small, fluttering note on the ground is the focal point. Neighbor Wang Er's house visible in the background, static fixed perspective, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Security": -100,
+          "Subtlety": -100
+        },
+        "mechanic_trigger": "",
+        "choices": []
+      }
+    },
+    {
+      "id": "7",
+      "narrative": {
+        "text_content": "张三用他最得意的毛笔，写下了那八个大字：“此地无银三百两”。他将牌子插在柳树下的土堆旁，然后心满意足地离开了。他觉得这是天衣无缝的伪装，谁也不会相信牌子上写的东西。他没有看到，王二的眼角，在他写字时，微微弯起了一道狡黠的弧线。第二天，张三发现牌子依然立着，但土堆已被翻开，银子不翼而飞。牌子旁，多了一张新的纸条：“隔壁王二不曾偷。”",
+        "mood": "自作聪明，讽刺，最终的震惊与绝望"
+      },
+      "cinematography": {
+        "environment_desc": "后院，柳树下，赫然立着一块写有“此地无银三百两”的牌子。牌子旁边是散乱的土堆，以及一张写着“隔壁王二不曾偷”的纸条。",
+        "scale_meters": {
+          "width": 10,
+          "height": 7,
+          "depth": 8
+        },
+        "lighting": "清晨的阳光，带着一丝残酷的清晰，照亮了被揭穿的秘密。",
+        "image_prompt": "Stylized traditional Chinese ink wash painting of a bright morning backyard, featuring a prominent willow tree. Underneath the tree, a disturbed earth mound with a boldly written sign that reads '此地无银三百两' (No 300 taels of silver are buried here). Beside it, a smaller note. No protagonist. Wang Er's house visible in the background, subtly implying his presence, static fixed perspective, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Security": -100,
+          "Subtlety": -200
+        },
+        "mechanic_trigger": "",
+        "choices": []
+      }
+    },
+    {
+      "id": "8",
+      "narrative": {
+        "text_content": "张三觉得一个凶神恶煞的稻草人足以吓退任何宵小。他用旧衣服和稻草扎了一个面目狰狞的稻草人，直挺挺地插在柳树下，仿佛一个忠实的守卫。他为自己的创意沾沾自喜。他没有看到，王二在墙头，嘴角挂着一丝玩味的笑容。夜晚，稻草人被轻易推倒，银子不翼而飞。第二天，张三只发现稻草人倒在地上，旁边多了一张纸条……",
+        "mood": "自欺，讽刺，最终的失落"
+      },
+      "cinematography": {
+        "environment_desc": "后院，柳树下，一个倒在地上的稻草人，其旁边是已被翻开的土堆。画面充满清晨的寂寥感。",
+        "scale_meters": {
+          "width": 10,
+          "height": 7,
+          "depth": 8
+        },
+        "lighting": "清晨微光，映照着倒地的稻草人和被翻开的土地，气氛略显凄凉。",
+        "image_prompt": "Stylized traditional Chinese ink wash painting of a desolate backyard in the early morning, with a fallen scarecrow lying next to a disturbed earth mound beneath a willow tree. No protagonist. Wang Er's subtle, observing presence is implied from his house in the background, static fixed perspective, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Security": -100,
+          "Subtlety": -100
+        },
+        "mechanic_trigger": "",
+        "choices": []
+      }
+    },
+    {
+      "id": "9",
+      "narrative": {
+        "text_content": "张三确信他的银子现在安全了。他时不时地踩一踩那块松动的地砖，感受着脚下银子的存在，心中充满了满足感。然而，他并没有意识到，他那过于频繁和刻意的举动，早已引起了窗外路过的王二的注意。夜晚，当张三熟睡之时，王二轻轻撬开地砖，将银子盗走，只留下了一张纸条……",
+        "mood": "自欺，讽刺，最终的失落"
+      },
+      "cinematography": {
+        "environment_desc": "夜晚，昏暗的工坊。月光透过窗户洒在地板上，但主要场景是雕刻台下被撬开的地砖，空空如也。",
+        "scale_meters": {
+          "width": 4,
+          "height": 3,
+          "depth": 3
+        },
+        "lighting": "幽暗的月光，聚焦于空地砖的上方，营造出一种被揭露的秘密感。",
+        "image_prompt": "Stylized traditional Chinese ink wash painting of a dim, moonlit workshop interior at night, focusing on an empty, pried-open floorboard beneath a heavy wooden bench. No protagonist. A faint silhouette of Wang Er vanishing into the shadows outside the window. The scene suggests a theft has occurred, static fixed perspective, masterpiece, 8k resolution, unreal engine 5 render, highly detailed"
+      },
+      "gameplay": {
+        "required_conditions": {},
+        "state_changes": {
+          "Security": -100,
+          "Subtlety": -100
+        },
+        "mechanic_trigger": "",
+        "choices": []
+      }
+    }
+  ]
+}
