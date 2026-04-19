@@ -98,6 +98,16 @@ void draw_text_from_buffer(int32_t x, int32_t y, int32_t fontSize, int32_t r, in
     DrawText(text_buffer, x, y, fontSize, color);
 }
 
+void DrawRectangle_wrapper(int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int32_t g, int32_t b, int32_t a) {
+    Color color = { (unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)a };
+    DrawRectangle(x, y, w, h, color);
+}
+
+void DrawRectangleLines_wrapper(int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int32_t g, int32_t b, int32_t a) {
+    Color color = { (unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)a };
+    DrawRectangleLinesEx((Rectangle){ (float)x, (float)y, (float)w, (float)h }, 2.0f, color);
+}
+
 void DrawFPS_wrapper(int32_t x, int32_t y) {
     DrawFPS(x, y);
 }

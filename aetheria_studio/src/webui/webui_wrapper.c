@@ -88,6 +88,14 @@ int32_t webui_show_browser_wrapper(int64_t window, int32_t browser) {
     return (int32_t)res;
 }
 
+void webui_set_size_wrapper(int64_t window, int32_t width, int32_t height) {
+    webui_set_size((size_t)window, (unsigned int)width, (unsigned int)height);
+}
+
+void webui_set_minimum_size_wrapper(int64_t window, int32_t width, int32_t height) {
+    webui_set_minimum_size((size_t)window, (unsigned int)width, (unsigned int)height);
+}
+
 void webui_set_timeout_wrapper(int32_t second) {
     webui_set_timeout((size_t)second);
 }

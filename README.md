@@ -1,84 +1,117 @@
 # MoonPalace
 
-MoonPalace is the overarching repository housing **Aetheria Studio** and its associated experimental game development workshops. The core philosophy of this project is to explore the intersection of Large Language Models (LLMs), Generative AI (like ComfyUI for 2D/3D assets), and modern programming languages (MoonBit) to automate and democratize the game asset creation pipeline.
+MoonPalace 是一个面向“AI 自动生成游戏内容”的多项目仓库。它并非单一应用，而是由以下几类系统共同组成：
 
----
+- 生成编排与创作工作台（`aetheria_studio`）
+- 实时渲染与交互引擎（`aetheria_engine`）
+- 资产预处理与体素化工具链（`aetheria_foundry`、`aetheria_voxelizer`）
+- 离线 AI 编译管线与原型脚手架（`ai_compiler_pipeline`、`3d_project_scaffold`）
 
-## 🌟 Core Project: Aetheria Studio
+当前主线工作流为：`Aetheria Studio` 负责生成内容与资产，`Aetheria Engine` 负责加载并运行这些资产。
 
-**Aetheria Studio** is a 2D/3D game asset generation pipeline and creative workbench driven by LLMs and advanced image generation models (ComfyUI). Through AI Pair Programming (Vibe Coding), creators only need to input a brief core concept, and Aetheria Studio will automatically complete the entire process: from world-building, state machine blueprints, and storyboard generation, to the automated rendering and previewing of final 2D scene images and 3D model assets.
+## 仓库结构总览
 
-The frontend of this project adopts a modern WebUI architecture, while the backend is written entirely in the emerging **MoonBit** language, compiling into a Native desktop application that boasts both blazing-fast responsiveness and cross-platform flexibility.
+### 核心主线模块
 
-### Key Features & Workflow
+- `aetheria_studio/`
+  - 项目定位：AI 游戏创作工作台（WebUI + MoonBit 后端）
+  - 主要职责：从概念到世界观/状态机/脚本/JSON，再到 2D 与 3D 资产生成和预览
+  - 运行形态：Native 桌面程序（含独立 worker 可执行文件）
+- `aetheria_engine/`
+  - 项目定位：MoonBit + Raylib 的实时 3D 引擎
+  - 主要职责：游戏状态机、物理碰撞、体素世界加载、GLB 渲染
+  - 运行形态：双入口（体素物理主线 + 纯 GLB 预览线）
+- `aetheria_foundry/`
+  - 项目定位：离线资产处理脚本集合（Python）
+  - 主要职责：GLB 优化、切分、体素相关处理、3D 资产辅助工具
+- `aetheria_voxelizer/`
+  - 项目定位：体素化处理工程（MoonBit）
+  - 主要职责：将模型转换为引擎可消费的体素 chunk 数据
 
-Aetheria Studio's workflow is divided into distinct, repeatable steps, ensuring that every AI-generated image or model is deeply tied to the game's script:
+### 支撑与实验模块
 
-1. **Core Concept & World Bible**: Input a few words, and the LLM will expand it into a complete worldview, factions, and core conflicts.
-2. **State Machine Blueprint**: Automatically generates branching narrative node logic based on the worldview.
-3. **Detailed Script**: Fills each node with specific environmental descriptions, dialogues, and character actions.
-4. **JSON Serialization**: Converts unstructured scripts into a strict JSON data structure directly readable by game engines.
-5. **2D Asset Generation**: Proxies requests to RunComfy (using models like Flux2) to automatically generate stylized 2D scene images based on environmental descriptions.
-6. **3D Asset Generation**: Uses generated images or prompts to request 3D generative models (like Trellis), producing standard `.glb` 3D models.
-7. **2D/3D Game Preview**: The built-in Three.js WebGL engine allows for immediate previewing of 3D model scenes overlaid with narrative options directly within the software.
+- `ai_compiler_pipeline/`
+  - 离线 Python 管线示例：`prompt -> world_data.json + scene_base.png`
+- `aetheria_workshop/`
+  - 早期实验/验证工程，保留若干旧链路与测试代码
+- `3d_project_scaffold/`
+  - 原型脚手架与方法论文档（早期概念验证）
+- `mock_data/`
+  - AI 未接入或联调阶段使用的假数据资产
+- `docs/`
+  - 项目架构说明与设计文档（重点看引擎架构）
 
-### Architecture Design
+## 端到端流程（当前主链路）
 
-Aetheria Studio employs a modern **Frontend WebUI + Backend MoonBit** hybrid architecture:
+1. 在 `aetheria_studio` 输入核心概念，生成世界观与状态机蓝图。
+2. 继续生成分镜脚本并序列化为结构化 JSON。
+3. 调用 `comfy_worker` 生成 2D 资产（本地 ComfyUI 或 RunComfy）。
+4. 调用 `comfy_3d_worker` 生成 3D 模型（GLB）。
+5. 通过预览功能或 `aetheria_engine` 运行时加载资产，进行交互与渲染验证。
+6. 对高复杂度 GLB 先经过 `aetheria_foundry` 预处理，再进入引擎链路。
 
-- **Frontend**: Built with HTML/CSS/Vanilla JS and communicates with the underlying system via a WebUI library. It handles complex UI state management, long-text rendering, Three.js 3D previews, and time-consuming polling tasks (e.g., using `fetch` to poll RunComfy status, resolving CORS issues via a backend proxy).
-- **Backend**: Written entirely in **MoonBit**, using C FFI (Foreign Function Interface) to bind system-level APIs. The backend focuses on efficient proxying of local file I/O, precise regex parsing of LLM text, persistent storage of state machines, and secure HTTP request proxying.
+## 快速开始
 
----
-
-## 🚀 Getting Started
-
-### 1. Building the MoonBit Backend
-To build Aetheria Studio from the source, you need the MoonBit toolchain installed:
+### 路线 A：先跑通 Aetheria Studio（推荐）
 
 ```bash
-# Navigate to the studio directory
 cd aetheria_studio
-
-# Build for the native target using MoonBit CLI
 moon build --target native
+```
 
-# Or simply run the provided batch script on Windows
+Windows 可直接运行：
+
+```bash
 .\build.bat
 ```
-Upon successful compilation, `AetheriaStudio_v3.exe` and related worker executables will be generated in the root directory.
 
-### 2. Usage Guide
-1. **Launch**: Run the compiled `AetheriaStudio_v3.exe`.
-2. **Configuration**: Click on `System Settings` in the left navigation bar.
-   - Configure your **LLM API** (e.g., OpenAI compatible) URL, Key, and Model name for narrative and JSON generation.
-   - Configure your **RunComfy API** (or Local ComfyUI) URL and Token for image generation.
-   - Click `Save Configuration`.
-3. **Create a Project**:
-   - Go to the `Creative Workbench` and input your game inspiration in the first tab.
-   - Click `Quick Generate Core Concept`.
-   - Progress through generating the Worldview, Blueprint, and Detailed Script.
-   - Once the JSON structure is generated in Step 4, click `Batch Generate 2D Assets`.
-4. **Monitor Progress**: The UI will automatically poll and display the real-time download progress of each image and 3D model.
-5. **Preview Game**: Switch to the `2D Game Preview` panel to load your generated models alongside the JSON narrative data with interactive option buttons.
+完成后运行 `AetheriaStudio_v3.exe`，在 `System Settings` 中配置：
 
----
+- LLM API（用于文本与 JSON 生成）
+- ComfyUI / RunComfy 配置（用于 2D/3D 资产生成）
 
-## 🛠️ ComfyUI Image Generation Configuration
+### 路线 B：单独运行引擎
 
-Aetheria Studio heavily relies on the ComfyUI architecture for asset generation (supporting both local deployment and RunComfy Cloud API).
+```bash
+cd aetheria_engine
+moon build --target native
+```
 
-- **Cloud Mode (Recommended)**: Enter the `https://api.runcomfy.net/...` Endpoint and your Bearer Token in the system settings. The frontend has built-in support for perfectly polling RunComfy's asynchronous task IDs.
-- **Local Mode**: Ensure your local ComfyUI is running in API mode (`--listen`) and point the configuration URL to `http://127.0.0.1:8188`.
+- 体素物理主线入口：`cmd/`
+- 纯 GLB 预览入口：`cmd_glb/`（可用于美术资产快速检查）
 
----
+## 常见开发入口
 
-## 🙏 Acknowledgements & Dependencies
+- Studio 主程序入口：`aetheria_studio/cmd/main/main.mbt`
+- Studio Workers：
+  - `aetheria_studio/src/llm_worker/main.mbt`
+  - `aetheria_studio/src/comfy_worker/main.mbt`
+  - `aetheria_studio/src/comfy_3d_worker/main.mbt`
+- Engine 主入口：`aetheria_engine/cmd/main.mbt`
+- Engine GLB 入口：`aetheria_engine/cmd_glb/main.mbt`
+- 资产处理脚本：
+  - `aetheria_foundry/optimize_glb_for_raylib.py`
+  - `aetheria_foundry/split_glb_to_chunks.py`
+  - `aetheria_foundry/glb_to_voxel.py`
 
-This project is made possible by the incredible support of the following open-source communities and toolchains:
+## 文档索引
 
-- **[MoonBit](https://www.moonbitlang.com/)**: A blazing-fast, intelligent next-generation programming language that provides powerful performance and type safety for our Native backend.
-- **[WebUI](https://webui.me/)**: A lightweight, cross-platform WebView library bridging the C/MoonBit and frontend worlds.
-- **[Three.js](https://threejs.org/)**: A powerful WebGL 3D rendering library used to drive `.glb` game asset previews in the frontend.
-- **[ComfyUI](https://github.com/comfyanonymous/ComfyUI)**: A modular Stable Diffusion node-graph interface serving as the underlying engine for image generation.
-- **[RunComfy](https://www.runcomfy.com/)**: Providing ComfyUI Serverless API hosting services.
+- 项目架构文档：`docs/ARCHITECTURE.md`
+- Windows 运行说明：`README_WINDOWS_SETUP.md`
+- 系统部署与开发手册：`README_DEPLOYMENT.md`
+- Studio 子项目说明：`aetheria_studio/README.md`
+- Engine 子项目说明：`aetheria_engine/README.md`
+
+## 依赖与技术栈
+
+- [MoonBit](https://www.moonbitlang.com/)
+- [Raylib](https://www.raylib.com/)
+- [WebUI](https://webui.me/)
+- [Three.js](https://threejs.org/)
+- [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
+- [RunComfy](https://www.runcomfy.com/)
+
+## 说明
+
+- 本仓库包含多个阶段产物与实验分支，文档会持续更新。
+- 若你刚接触本项目，建议优先从 `aetheria_studio` 和 `docs/ARCHITECTURE.md` 开始。

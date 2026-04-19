@@ -32,6 +32,8 @@ pub fn webui_new_window() -> WebWindow {
 
 extern "C" fn webui_show_wrapper(window: Int64) -> Int = "webui_show_wrapper"
 extern "C" fn webui_show_browser_wrapper(window: Int64, browser: Int) -> Bool = "webui_show_browser_wrapper"
+extern "C" fn webui_set_size_wrapper(window: Int64, width: Int, height: Int) = "webui_set_size_wrapper"
+extern "C" fn webui_set_minimum_size_wrapper(window: Int64, width: Int, height: Int) = "webui_set_minimum_size_wrapper"
 
 pub fn webui_show(window: WebWindow, content: String) -> Unit {
     pass_string(content)
@@ -41,6 +43,14 @@ pub fn webui_show(window: WebWindow, content: String) -> Unit {
 pub fn webui_show_browser(window: WebWindow, content: String, browser: Int) -> Bool {
     pass_string(content)
     webui_show_browser_wrapper(window.0, browser)
+}
+
+pub fn webui_set_size(window: WebWindow, width: Int, height: Int) -> Unit {
+    webui_set_size_wrapper(window.0, width, height)
+}
+
+pub fn webui_set_minimum_size(window: WebWindow, width: Int, height: Int) -> Unit {
+    webui_set_minimum_size_wrapper(window.0, width, height)
 }
 
 extern "C" fn webui_set_timeout_wrapper(second: Int) = "webui_set_timeout_wrapper"

@@ -16,20 +16,20 @@ if %ERRORLEVEL% neq 0 (
 
 echo [INFO] Copying executables to root directory...
 if exist "_build\native\debug\build\cmd\main\main.exe" (
-    copy /y "_build\native\debug\build\cmd\main\main.exe" "AetheriaStudio_v3.exe"
-    echo [SUCCESS] AetheriaStudio_v3.exe generated successfully!
+    copy /y "_build\native\debug\build\cmd\main\main.exe" "AetheriaStudio_v4.exe"
+    echo [SUCCESS] AetheriaStudio_v4.exe generated successfully!
 )
 
 if exist "_build\native\debug\build\src\llm_worker\llm_worker.exe" (
-    copy /y "_build\native\debug\build\src\llm_worker\llm_worker.exe" "llm_worker_v3.exe"
+    copy /y "_build\native\debug\build\src\llm_worker\llm_worker.exe" "llm_worker_v4.exe"
 )
 
 if exist "_build\native\debug\build\src\comfy_worker\comfy_worker.exe" (
-    copy /y "_build\native\debug\build\src\comfy_worker\comfy_worker.exe" "comfy_worker_v3.exe"
+    copy /y "_build\native\debug\build\src\comfy_worker\comfy_worker.exe" "comfy_worker_v4.exe"
 )
 
 if exist "_build\native\debug\build\src\comfy_3d_worker\comfy_3d_worker.exe" (
-    copy /y "_build\native\debug\build\src\comfy_3d_worker\comfy_3d_worker.exe" "comfy_3d_worker_v3.exe"
+    copy /y "_build\native\debug\build\src\comfy_3d_worker\comfy_3d_worker.exe" "comfy_3d_worker_v4.exe"
 )
 
 endlocal

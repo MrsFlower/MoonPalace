@@ -3,6 +3,8 @@
   "import": [
     "moonbitlang/core/math",
     "moonbitlang/core/json",
+    "moonbitlang/core/env",
+    "moonbitlang/x/fs",
     "aetheria/engine/src/raylib"
   ],
   "link": {

@@ -26,6 +26,8 @@ const app = {
             tab_step6: "2D Queue",
             title_3d_model: "3D Asset Generation",
             btn_generate_3d: "Generate 3D Models",
+            btn_start_3d_preview: "3D Game Preview",
+            btn_start_raylib: "Start Raylib Render",
             btn_load_project: "Load Existing Project",
             btn_start_game: "Start Game / Refresh",
             title_settings: "Configuration",
@@ -63,6 +65,8 @@ const app = {
             tab_step6: "待生成图片列表",
             title_3d_model: "3D 模型生成列表",
             btn_generate_3d: "批量生成 3D 模型",
+            btn_start_3d_preview: "3D游戏预览",
+            btn_start_raylib: "启动Raylib渲染",
             btn_load_project: "加载已有项目目录",
             btn_start_game: "启动游戏 / 刷新",
             title_settings: "系统配置",
@@ -132,6 +136,8 @@ const app = {
         
         el = document.getElementById('title-3d-model'); if (el) el.innerText = dict.title_3d_model;
         el = document.getElementById('btnGenerate3D'); if (el) el.innerText = dict.btn_generate_3d;
+        el = document.getElementById('btnStart3DGame'); if (el) el.innerText = dict.btn_start_3d_preview;
+        el = document.getElementById('btnStartRaylib'); if (el) el.innerText = dict.btn_start_raylib;
         el = document.getElementById('title-preview'); if (el) el.innerText = dict.title_preview;
         el = document.getElementById('btnStartGame'); if (el) el.innerText = dict.btn_start_game;
         
@@ -164,6 +170,39 @@ const app = {
             // Save immediately when language changes to persist across reloads
             this.saveConfig();
         }
+    },
+
+    // Keep filename generation consistent with backend MoonBit logic:
+    // - strip non-ASCII chars
+    // - replace spaces with underscores
+    // - apply fallback when empty
+    toSafeAssetId: function(raw, fallback) {
+        let src = String(raw || "");
+        let out = "";
+        for (let i = 0; i < src.length; i++) {
+            const code = src.charCodeAt(i);
+            if (code >= 32 && code <= 126) out += src[i];
+        }
+        out = out.replace(/ /g, "_");
+        if (!out || out === "_") out = fallback || "asset";
+        return out;
+    },
+
+    setTextIfExists: function(id, text) {
+        let el = document.getElementById(id);
+        if (el) el.innerText = text;
+    },
+
+    setStyleIfExists: function(id, prop, value) {
+        let el = document.getElementById(id);
+        if (el) el.style[prop] = value;
+    },
+
+    setStatus: function(text, isError = false) {
+        let el = document.getElementById('statusText');
+        if (!el) return;
+        el.innerText = text;
+        el.style.color = isError ? '#ff7777' : '#888';
     },
 
     showTab: function(tabId) {
@@ -339,7 +378,7 @@ const app = {
                         let btnStart = document.getElementById('btnStartPipeline');
                         if (btnStart) btnStart.disabled = false;
                     }
-                    if (this.gameState.step_contents && this.gameState.step_contents[5] && this.gameState.step_contents[5] !== "") {
+                    if (this.gameState.step_contents && this.gameState.step_contents[4] && this.gameState.step_contents[4] !== "") {
                         let btnAssets = document.getElementById('btnGenAssets');
                         if (btnAssets) btnAssets.disabled = false;
                     }
@@ -352,23 +391,35 @@ const app = {
         if (typeof webui === 'undefined') return;
         webui.call('backend_load_project', '').then(res => {
             if (res === "failed") {
-                alert("Failed to load project.");
+                this.setStatus("加载项目失败。", true);
             } else if (res === "cancelled") {
                 // do nothing
             } else {
-                alert("Project loaded successfully!");
                 this.project_id = res;
                 this.fetchState();
-                setTimeout(() => this.switchStepTab(0), 200);
+                setTimeout(() => {
+                    this.fetchState();
+                    setTimeout(() => this.showStepContent(this.findNextIncompleteStep()), 150);
+                }, 150);
+                this.setStatus("项目已加载。");
             }
-        }).catch(err => alert("Error: " + err));
+        }).catch(err => this.setStatus("加载项目异常: " + err, true));
+    },
+
+    findNextIncompleteStep: function() {
+        if (!this.gameState || !Array.isArray(this.gameState.step_contents)) return 0;
+        for (let i = 0; i < 6; i++) {
+            let c = this.gameState.step_contents[i];
+            if (!c || c === "" || c.startsWith("Error:")) return i;
+        }
+        return 5;
     },
 
     startConcept: function() {
         if (typeof webui === 'undefined') return;
         const promptText = document.getElementById('prompt').value;
         if (!promptText) {
-            alert("Please enter a prompt.");
+            this.setStatus("请先输入创作灵感。", true);
             return;
         }
         
@@ -380,7 +431,7 @@ const app = {
         webui.call('backend_start_concept', promptText).then(response => {
             this.pollInterval = setInterval(() => this.pollConcept(), 1500);
         }).catch(err => {
-            alert("Error starting concept: " + err);
+            this.setStatus("启动概念生成失败: " + err, true);
             document.getElementById('btnGenerate').disabled = false;
             document.getElementById('btnGenAssets').disabled = false;
         });
@@ -443,9 +494,22 @@ const app = {
         this.updateProgress(10, "Step 1: World Bible...");
         
         webui.call('backend_start_pipeline', '').then(response => {
+            if (response === "need_concept") {
+                this.setStatus("请先完成第1步核心概念。", true);
+                document.getElementById('btnGenerate').disabled = false;
+                document.getElementById('btnStartPipeline').disabled = false;
+                return;
+            }
+            if (response === "already_done") {
+                this.setStatus("当前项目已完成全部管线步骤。");
+                document.getElementById('btnGenerate').disabled = false;
+                document.getElementById('btnStartPipeline').disabled = false;
+                document.getElementById('btnGenAssets').disabled = false;
+                return;
+            }
             this.pollInterval = setInterval(() => this.pollPipeline(), 1500);
         }).catch(err => {
-            alert("Error starting pipeline: " + err);
+            this.setStatus("启动管线失败: " + err, true);
             document.getElementById('btnGenerate').disabled = false;
             document.getElementById('btnStartPipeline').disabled = false;
             document.getElementById('btnGenAssets').disabled = false;
@@ -520,7 +584,7 @@ const app = {
                 this.pollInterval = setInterval(() => this.pollPipeline(), 1500);
             }
         }).catch(err => {
-            alert("Error retrying step: " + err);
+            this.setStatus("重试步骤失败: " + err, true);
         });
     },
 
@@ -531,7 +595,7 @@ const app = {
     generateAllAssets: async function() {
             if (typeof webui === 'undefined') return;
             if (!this.project_id) {
-                alert("No project loaded.");
+                this.setStatus("请先加载项目。", true);
                 return;
             }
             
@@ -541,61 +605,80 @@ const app = {
                 
                 let isLocal = conf.comfy_mode === "local";
                 if (!isLocal && (!conf.runcomfy_url || !conf.runcomfy_token)) {
-                    alert("RunComfy configuration is missing.");
+                    this.setStatus("缺少 RunComfy 配置。", true);
                     return;
                 }
                 if (isLocal && !conf.comfy_url) {
-                    alert("Local ComfyUI URL is missing.");
+                    this.setStatus("缺少本地 ComfyUI URL 配置。", true);
                     return;
                 }
                 
                 let nodesData = JSON.parse(this.gameState.step_contents[4]);
                 let nodes = nodesData.nodes || [];
                 if (nodes.length === 0) {
-                    alert("No nodes found in Step 4 JSON.");
+                    this.setStatus("Step 4 JSON 中没有可生成节点。", true);
                     return;
                 }
                 
                 let container = document.getElementById('image-queue-list');
                 if (container) container.innerHTML = '';
-                
+
+                // Phase 1: materialize the full queue first so WebView can show all pending items immediately.
+                let tasks = [];
                 for (let i = 0; i < nodes.length; i++) {
                     let node = nodes[i];
-                    let prompt = node.cinematography.image_prompt;
-                    let filename = this.project_id + "_" + node.id + ".png";
-                    
+                    let prompt = (node.cinematography && node.cinematography.image_prompt) ? node.cinematography.image_prompt : "";
+                    let safeNodeId = this.toSafeAssetId(node.id, "node_" + i);
+                    let filename = "scene_" + safeNodeId + ".png";
+                    let uiKey = safeNodeId + "_" + i;
+                    tasks.push({ node, prompt, filename, uiKey });
+
                     if (container) {
                         let div = document.createElement('div');
-                        div.id = 'img-task-' + node.id;
+                        div.id = 'img-task-' + uiKey;
                         div.style.padding = "10px";
                         div.style.backgroundColor = "#2d2d30";
                         div.style.borderLeft = "4px solid #f1c40f";
                         div.style.borderRadius = "4px";
                         div.style.marginBottom = "10px";
-                        div.innerHTML = `<div style="font-weight:bold;color:#dcdcaa">${filename}</div><div style="font-size:12px;color:#aaa;margin-top:5px;">${prompt}</div><div id="img-status-${node.id}" style="font-size:12px;margin-top:5px;color:#f1c40f;">Status: Submitting...</div>`;
+                        div.innerHTML = `<div style="font-weight:bold;color:#dcdcaa">${filename}</div><div style="font-size:12px;color:#aaa;margin-top:5px;">${prompt}</div><div id="img-status-${uiKey}" style="font-size:12px;margin-top:5px;color:#f1c40f;">Status: Pending...</div>`;
                         container.appendChild(div);
+                    }
+                }
+
+                // Local mode launches one backend batch worker for the entire queue.
+                if (isLocal && tasks.length > 0) {
+                    this.setTextIfExists('img-status-' + tasks[0].uiKey, "Status: Starting Local Backend Worker...");
+                    let res = await webui.call('backend_generate_all_assets', '');
+                    if (res === "started") {
+                        this.updateProgress(35, "2D assets: local backend worker started...");
+                    } else {
+                        throw new Error("Backend worker failed to start");
+                    }
+                }
+                
+                // Phase 2: process each queue item and update status in place.
+                for (let i = 0; i < tasks.length; i++) {
+                    let task = tasks[i];
+                    let node = task.node;
+                    let prompt = task.prompt;
+                    let filename = task.filename;
+                    let uiKey = task.uiKey;
+
+                    if (!prompt) {
+                        this.setTextIfExists('img-status-' + uiKey, "Status: Skipped (empty prompt)");
+                        this.setStyleIfExists('img-task-' + uiKey, "borderLeft", "4px solid #e74c3c");
+                        continue;
                     }
                     
                     if (isLocal) {
-                        // Local ComfyUI Generation Logic
                         try {
-                            if (i === 0) {
-                                document.getElementById('img-status-' + node.id).innerText = "Status: Starting Local Backend Worker...";
-                                let res = await webui.call('backend_generate_all_assets', '');
-                                if (res === "started") {
-                                    alert("Local ComfyUI generation started via backend script. This may take a while depending on your GPU.");
-                                } else {
-                                    throw new Error("Backend worker failed to start");
-                                }
-                            }
-                            
-                            document.getElementById('img-status-' + node.id).innerText = "Status: Generating locally...";
+                            this.setTextIfExists('img-status-' + uiKey, "Status: Generating locally...");
                             
                             // Poll file existence to update UI
                             let max_tries = 300;
                             let fileFound = false;
                             for (let j = 0; j < max_tries; j++) {
-                                let checkReq = { filename: filename };
                                 let exists = await webui.call('backend_file_exists', app.project_id + "\\" + filename);
                                 if (exists === "true") {
                                     fileFound = true;
@@ -605,15 +688,14 @@ const app = {
                             }
                             
                             if (fileFound) {
-                                document.getElementById('img-status-' + node.id).innerText = "Status: Downloaded Successfully";
-                                document.getElementById('img-task-' + node.id).style.borderLeft = "4px solid #4CAF50";
+                                this.setTextIfExists('img-status-' + uiKey, "Status: Downloaded Successfully");
+                                this.setStyleIfExists('img-task-' + uiKey, "borderLeft", "4px solid #4CAF50");
                             } else {
                                 throw new Error("Timeout waiting for local file to be generated");
                             }
-                            
                         } catch (e) {
-                            document.getElementById('img-status-' + node.id).innerText = "Status: Error - " + e.message;
-                            document.getElementById('img-task-' + node.id).style.borderLeft = "4px solid #e74c3c";
+                            this.setTextIfExists('img-status-' + uiKey, "Status: Error - " + e.message);
+                            this.setStyleIfExists('img-task-' + uiKey, "borderLeft", "4px solid #e74c3c");
                         }
                     } else {
                         // RunComfy Generation Logic
@@ -637,17 +719,17 @@ const app = {
                         let prompt_id = res.request_id || res.run_id || res.id;
                         
                         if (!prompt_id) {
-                            document.getElementById('img-status-' + node.id).innerText = "Status: Failed to submit";
-                            document.getElementById('img-task-' + node.id).style.borderLeft = "4px solid #e74c3c";
+                            this.setTextIfExists('img-status-' + uiKey, "Status: Failed to submit");
+                            this.setStyleIfExists('img-task-' + uiKey, "borderLeft", "4px solid #e74c3c");
                             continue;
                         }
                         
-                        document.getElementById('img-status-' + node.id).innerText = "Status: Polling (ID: " + prompt_id + ")...";
+                        this.setTextIfExists('img-status-' + uiKey, "Status: Polling (ID: " + prompt_id + ")...");
                         
                         try {
                             let resultUrl = await this.runcomfyPoll(prompt_id, conf);
                             if (resultUrl) {
-                                document.getElementById('img-status-' + node.id).innerText = "Status: Downloading...";
+                                this.setTextIfExists('img-status-' + uiKey, "Status: Downloading...");
                                 let dlReq = {
                                     url: resultUrl,
                                     filename: filename,
@@ -655,21 +737,22 @@ const app = {
                                 };
                                 let dlRes = await webui.call('backend_download_image', JSON.stringify(dlReq));
                                 if (dlRes === "ok") {
-                                    document.getElementById('img-status-' + node.id).innerText = "Status: Downloaded Successfully";
-                                    document.getElementById('img-task-' + node.id).style.borderLeft = "4px solid #4CAF50";
+                                    this.setTextIfExists('img-status-' + uiKey, "Status: Downloaded Successfully");
+                                    this.setStyleIfExists('img-task-' + uiKey, "borderLeft", "4px solid #4CAF50");
                                 } else {
                                     throw new Error(dlRes);
                                 }
                             }
                         } catch (e) {
-                            document.getElementById('img-status-' + node.id).innerText = "Status: Error - " + e.message;
-                            document.getElementById('img-task-' + node.id).style.borderLeft = "4px solid #e74c3c";
+                            this.setTextIfExists('img-status-' + uiKey, "Status: Error - " + e.message);
+                            this.setStyleIfExists('img-task-' + uiKey, "borderLeft", "4px solid #e74c3c");
                         }
                     }
                 }
-                if (!isLocal) alert("All 2D assets generated!");
+                if (!isLocal) this.updateProgress(100, "All 2D assets generated.");
             } catch (e) {
-                alert("Error generating assets: " + e);
+                console.error("Error generating assets:", e);
+                this.updateProgress(0, "2D asset generation failed: " + (e.message || e));
             }
         },
 
@@ -756,7 +839,49 @@ const app = {
         },
 
     fetchImageStatus: function() {
-        // Deprecated: UI is now updated directly in generateAllAssets
+        if (typeof webui === 'undefined') return;
+        webui.call('backend_get_asset_list', '').then(res => {
+            if (!res) return;
+            let list = [];
+            try {
+                list = JSON.parse(res);
+            } catch (e) {
+                console.error("Failed to parse image status list:", e);
+                return;
+            }
+            let container = document.getElementById('image-queue-list');
+            if (!container) return;
+            container.innerHTML = "";
+
+            if (!Array.isArray(list) || list.length === 0) {
+                container.innerHTML = '<div style="color: #888;">No image generation task is currently running. Start batch generation to see progress.</div>';
+                return;
+            }
+
+            list.forEach(item => {
+                let name = item.name || "unknown.png";
+                let prompt = item.prompt || "";
+                let statusRaw = item.status || "pending";
+                let kind = item.kind || (name.startsWith("scene_") ? "scene_2d" : "input_3d");
+                let done = statusRaw === "done";
+
+                let kindLabel = kind === "input_3d" ? "3D输入图" : "2D场景图";
+                let statusText = done ? "Status: Downloaded Successfully" : "Status: Pending / Running";
+                let statusColor = done ? "#4CAF50" : "#f1c40f";
+                let borderColor = done ? "#4CAF50" : "#f1c40f";
+
+                let div = document.createElement('div');
+                div.style.padding = "10px";
+                div.style.backgroundColor = "#2d2d30";
+                div.style.borderLeft = "4px solid " + borderColor;
+                div.style.borderRadius = "4px";
+                div.style.marginBottom = "10px";
+                div.innerHTML = `<div style="font-weight:bold;color:#dcdcaa">${name}</div><div style="font-size:12px;color:#7fb3ff;margin-top:4px;">Type: ${kindLabel}</div><div style="font-size:12px;color:#aaa;margin-top:5px;">${prompt}</div><div style="font-size:12px;margin-top:5px;color:${statusColor};">${statusText}</div>`;
+                container.appendChild(div);
+            });
+        }).catch(err => {
+            console.error("fetchImageStatus failed:", err);
+        });
     },
 
     fetch3DStatus: function() {
@@ -817,7 +942,7 @@ const app = {
      */
     generateAll3DAssets: async function() {
         if (!this.project_id) {
-            alert("No project loaded. Generate game assets first.");
+            this.setStatus("请先加载项目并完成前序步骤。", true);
             return;
         }
         if (typeof webui === 'undefined') return;
@@ -828,18 +953,18 @@ const app = {
             
             let isLocal = conf.comfy_mode === "local";
             if (!isLocal && (!conf.runcomfy_url || !conf.runcomfy_token)) {
-                alert("RunComfy configuration is missing.");
+                this.setStatus("缺少 RunComfy 配置。", true);
                 return;
             }
             if (isLocal && !conf.comfy_url) {
-                alert("Local ComfyUI URL is missing.");
+                this.setStatus("缺少本地 ComfyUI URL 配置。", true);
                 return;
             }
             
             let nodesArray = JSON.parse(this.gameState.step_contents[5]);
             let nodes = Array.isArray(nodesArray) ? nodesArray : (nodesArray.models || []);
             if (nodes.length === 0) {
-                alert("No 3D nodes found in Step 5 JSON.");
+                this.setStatus("Step 5 JSON 中没有 3D 节点。", true);
                 return;
             }
             
@@ -850,8 +975,9 @@ const app = {
                 let node = nodes[i];
                 let prompt = node.image_prompt || node.description;
                 let assetName = node.asset_name || node.id;
-                let filename = this.project_id + "_" + assetName + ".glb";
-                let tempImgName = this.project_id + "_" + assetName + "_temp.png";
+                let safeAssetName = this.toSafeAssetId(assetName, "asset_" + i);
+                let filename = safeAssetName + "_Textured.glb";
+                let tempImgName = safeAssetName + "_temp.png";
                 
                 if (container) {
                     let div = document.createElement('div');
@@ -867,17 +993,18 @@ const app = {
                 
                 if (isLocal) {
                     try {
-                        document.getElementById('model-status-' + assetName).innerText = "Status: Submitting 3D task to Local Backend Worker...";
-                        let res = await webui.call('backend_generate_all_3d_assets', '');
-                        if (res === "started") {
-                            document.getElementById('model-status-' + assetName).innerText = "Status: Local 3D Backend Worker Started... (Check Console)";
-                            document.getElementById('model-task-' + assetName).style.borderLeft = "4px solid #4CAF50";
-                        } else {
-                            throw new Error("Backend worker failed to start");
-                        }
-                        
                         if (i === 0) {
-                            alert("Local ComfyUI 3D generation started via backend script.");
+                            document.getElementById('model-status-' + assetName).innerText = "Status: Submitting 3D task to Local Backend Worker...";
+                            let res = await webui.call('backend_generate_all_3d_assets', '');
+                            if (res === "started") {
+                                document.getElementById('model-status-' + assetName).innerText = "Status: Local 3D Backend Worker Started... (Check Console)";
+                                document.getElementById('model-task-' + assetName).style.borderLeft = "4px solid #4CAF50";
+                            } else {
+                                throw new Error("Backend worker failed to start");
+                            }
+                            this.updateProgress(40, "3D assets: local backend worker started...");
+                        } else {
+                            document.getElementById('model-status-' + assetName).innerText = "Status: Queued in same local batch...";
                         }
                     } catch (e) {
                         document.getElementById('model-status-' + assetName).innerText = "Status: Error - " + e.message;
@@ -975,9 +1102,10 @@ const app = {
                     }
                 }
             }
-            if (!isLocal) alert("All 3D assets generated! (Note: Trellis 3D part might need backend worker)");
+            if (!isLocal) this.updateProgress(100, "All 3D assets generated.");
         } catch (e) {
-            alert("Error generating 3D assets: " + e);
+            console.error("Error generating 3D assets:", e);
+            this.updateProgress(0, "3D asset generation failed: " + (e.message || e));
         }
     },
 
@@ -987,7 +1115,7 @@ const app = {
 
     load3DAssets: function() {
         if (!this.project_id) {
-            alert("Please load a project first.");
+            this.setStatus("请先加载项目。", true);
             return;
         }
         if (typeof webui === 'undefined') return;
@@ -1234,11 +1362,11 @@ const app = {
         
         if (typeof webui === 'undefined') return;
         webui.call('backend_test_api', JSON.stringify(payload)).then(res => {
-            alert(res);
+            this.setStatus("API 测试结果: " + res);
             btn.innerText = oldText;
             btn.disabled = false;
         }).catch(err => {
-            alert("Test Error: " + err);
+            this.setStatus("API 测试失败: " + err, true);
             btn.innerText = oldText;
             btn.disabled = false;
         });
@@ -1246,35 +1374,61 @@ const app = {
 
     startGamePreview: function() {
         if (!this.project_id) {
-            alert("Please generate or load a project first.");
+            this.setStatus("请先生成或加载项目。", true);
             return;
         }
         if (typeof webui === 'undefined') return;
         webui.call('backend_load_game_json', '').then(res => {
             if (res && res !== "error") {
                 this.gameData = JSON.parse(res);
+                if (!this.gameData || !Array.isArray(this.gameData.nodes) || this.gameData.nodes.length === 0) {
+                    throw new Error("Invalid game JSON: missing nodes");
+                }
                 this.gameCurrentNodeId = this.gameData.nodes[0].id;
                 this.renderGameNode();
             } else {
-                alert("Failed to load game JSON. Make sure step 4 is completed.");
+                this.setStatus("加载游戏 JSON 失败，请确认 Step 4 已完成。", true);
             }
+        }).catch(err => {
+            console.error("startGamePreview failed:", err);
+            this.setStatus("启动 2D 预览失败: " + err.message, true);
         });
     },
 
     start3DGamePreview: function() {
         if (!this.project_id) {
-            alert("Please generate or load a project first.");
+            this.setStatus("请先生成或加载项目。", true);
             return;
         }
         if (typeof webui === 'undefined') return;
         webui.call('backend_load_game_json', '').then(res => {
             if (res && res !== "error") {
                 this.gameData = JSON.parse(res);
+                if (!this.gameData || !Array.isArray(this.gameData.nodes) || this.gameData.nodes.length === 0) {
+                    throw new Error("Invalid game JSON: missing nodes");
+                }
                 this.gameCurrentNodeId = this.gameData.nodes[0].id;
                 this.render3DGameNode();
             } else {
-                alert("Failed to load game JSON. Make sure step 4 is completed.");
+                this.setStatus("加载游戏 JSON 失败，请确认 Step 4 已完成。", true);
             }
+        }).catch(err => {
+            console.error("start3DGamePreview failed:", err);
+            this.setStatus("启动 3D 预览失败: " + err.message, true);
+        });
+    },
+
+    startRaylibPreview: function() {
+        if (typeof webui === 'undefined') return;
+        webui.call('backend_start_raylib_preview', '').then(res => {
+            if (res === "started") {
+                this.setStatus("Raylib 渲染窗口已启动。");
+            } else {
+                this.setStatus("未找到 Raylib 可执行文件，请先编译 aetheria_engine。", true);
+            }
+        }).catch(err => {
+            console.error("startRaylibPreview failed:", err);
+            this.setStatus("启动 Raylib 渲染失败: " + err, true);
         });
     },
 
@@ -1287,9 +1441,9 @@ const app = {
         let dialog = document.getElementById('game-dialog');
         let choices = document.getElementById('game-choices');
         
-        let safeName = node.id.replace(/ /g, "_");
+        let safeName = this.toSafeAssetId(node.id, "node_bg");
         
-        webui.call('backend_prepare_file', safeName + ".png").then(tempPath => {
+        webui.call('backend_prepare_file', "scene_" + safeName + ".png").then(tempPath => {
             if (tempPath && tempPath !== "error") {
                 bg.src = tempPath + "?t=" + new Date().getTime();
                 bg.style.display = "block";

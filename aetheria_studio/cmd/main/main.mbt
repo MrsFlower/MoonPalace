@@ -53,12 +53,48 @@ struct App {
   mut config: @config.Config
 }
 
+fn resolve_worker_exe(exe_dir: String, worker_base_name: String) -> String {
+  let worker_v4 = exe_dir + "\\" + worker_base_name + "_v4.exe"
+  if @fs.path_exists(worker_v4) {
+    return worker_v4
+  }
+  let worker_v3 = exe_dir + "\\" + worker_base_name + "_v3.exe"
+  if @fs.path_exists(worker_v3) {
+    return worker_v3
+  }
+  worker_v4
+}
+
+fn find_next_pipeline_step(app: App) -> Int {
+  if app.step_contents[0] == "" || app.step_contents[0].has_prefix("Error:") {
+    return 0
+  }
+  for i = 1; i < 6; i = i + 1 {
+    if app.step_contents[i] == "" || app.step_contents[i].has_prefix("Error:") {
+      return i
+    }
+  }
+  6
+}
+
 fn start_generation_step(app: App, step: Int) -> Unit {
   app.current_step = step
 
-  let lang_instruction = "?????????????????"
+  let lang_instruction = if app.config.lang == "ZH" {
+    "\nCRITICAL LANGUAGE MODE: Chinese (Simplified). All generated narrative text, dialogue, descriptions, and choices MUST be in Chinese."
+  } else {
+    "\nCRITICAL LANGUAGE MODE: English. All generated narrative text, dialogue, descriptions, and choices MUST be in English."
+  }
   let mut system_prompt = ""
   let mut user_prompt = ""
+  let mut scale_node_hint = "4-6 nodes (recommended)"
+  if app.step_contents[0].contains("2-3 scenes") {
+    scale_node_hint = "2-3 nodes (at least 3 nodes)"
+  } else if app.step_contents[0].contains("4-6 scenes") {
+    scale_node_hint = "4-6 nodes"
+  } else if app.step_contents[0].contains("7+ scenes") {
+    scale_node_hint = "7+ nodes"
+  }
 
   if step == 0 {
     system_prompt = "You are a professional Game Narrative Designer. Your task is to structure the user's idea into a strict, concise Game Concept Template. You MUST output ONLY the completed template, with no extra conversational text.\nCRITICAL INSTRUCTIONS:\n- The template must contain exactly these 6 fields: [Genre / Tone], [Art Style], [Core Theme], [Game Scale], [Story Summary], and [Plot Synopsis].\n- Fill in any missing details based on logical game design principles.\n- For [Game Scale], you MUST choose exactly one of these three: '2-3 scenes', '4-6 scenes', or '7+ scenes'. Do not invent other scales.\n- Incorporate any User Modification Suggestions if provided.\n- CRITICAL: If the user provides a specific phrase, classical idiom, fable, or existing story (e.g. '此地无银三百两'), you MUST use the exact original plot, characters, and events of that specific story. Do not just extract the moral lesson and invent a new story. You MUST strictly build the literal story around their exact input.\n- CRITICAL: [Story Summary] MUST be a concise but literal explanation of exactly what happens in the story (the who, what, and how). If it's a specific idiom/fable, explicitly write out the original tale's events here.\n- CRITICAL: Ensure the [Plot Synopsis] is detailed and explicitly states the core story beats, the beginning, the middle conflict, and the possible endings based on the [Story Summary]. This synopsis will be the strict foundation for the entire game.\n" + lang_instruction
@@ -67,10 +103,10 @@ fn start_generation_step(app: App, step: Int) -> Unit {
     system_prompt = "You are a master World Builder and Genre Analyst. First, analyze the user's concept to determine the exact genre, tone, and a specific **Core Conflict or Philosophical Theme**. Then, expand it into a detailed world-building bible.\nCRITICAL INSTRUCTIONS:\n- You must respect the user's requested Game Scale and Art Style constraints.\n- This Core Theme must be the driving force of the entire game.\n- CRITICAL: You MUST strictly adhere to the [Story Summary] and [Plot Synopsis] provided by the user. Do not invent a completely different story or setting. Do NOT substitute the user's concept with another famous story or idiom. Treat their input literally. If it's a known classical story, expand upon its exact original characters and plot, adding lore and depth, but keep the core events identical to the user's concept.\n- Avoid generic cliches. Tailor the world-building strictly to the determined genre. DO NOT force 'survival' or 'dark fantasy' unless the user explicitly asks for it.\n- Focus on the protagonist's specific daily routine, mundane struggles, and environment. Make the world feel lived-in and visceral.\nInclude:\n1. Core Theme & Philosophy\n2. History & Lore\n3. Factions & Hidden Conflicts\n4. Visual Tone & Atmosphere\n5. Protagonist's Background & Daily Life.\n" + lang_instruction
     user_prompt = "User Concept:\n" + app.step_contents[0]
   } else if step == 2 {
-    system_prompt = "You are a Game Narrative Designer. Your task is to design the **State Machine Blueprint (Node Topology)** for a branching narrative game based on the World Bible.\nCRITICAL INSTRUCTIONS:\n- You MUST output a FULL, complete list of ALL nodes. Do NOT output '[CONTINUE]', '...', or summarize. You must generate at least 4 distinct nodes.\n- Each Node MUST represent a specific scene in the story.\n- DO NOT output pseudo-code conditionals like 'IF ...'.\n\nYou MUST use EXACTLY the following Markdown template for your entire response. Do not add any conversational text before or after the template.\n\n# Tracked Metrics\n- [Metric 1] (e.g., Health)\n- [Metric 2] (e.g., Trust)\n- [Metric 3] (e.g., Wealth)\n\n# Node List\n\n## Node 1: [Node Name]\n**Description:** [1-sentence summary of the plot event here]\n**Choices:**\n- [Choice 1 Text] (+Metric1, -Metric2) -> Leads to Node 2\n- [Choice 2 Text] (+Metric3) -> Leads to Node 3\n\n## Node 2: [Node Name]\n**Description:** [1-sentence summary]\n**Choices:**\n- [Choice 1 Text] -> Leads to Node 4\n\n(Continue this exact format for Node 3, Node 4, Node 5, etc. Ensure at least 3 distinct Ending Nodes with empty Choices.)\n" + lang_instruction
+    system_prompt = "You are a Game Narrative Designer. Your task is to design the **State Machine Blueprint (Node Topology)** for a branching narrative game based on the World Bible.\nCRITICAL INSTRUCTIONS:\n- You MUST output a FULL, complete list of ALL nodes. Do NOT output '[CONTINUE]', '...', placeholders, or summaries.\n- Node count must follow the requested Game Scale. Target size: " + scale_node_hint + ".\n- Each Node MUST represent a specific scene in the story.\n- DO NOT output pseudo-code conditionals like 'IF ...'.\n\nYou MUST use EXACTLY the following Markdown template for your entire response. Do not add any conversational text before or after the template.\n\n# Tracked Metrics\n- [Metric 1] (e.g., Health)\n- [Metric 2] (e.g., Trust)\n- [Metric 3] (e.g., Wealth)\n\n# Node List\n\n## Node 1: [Node Name]\n**Description:** [1-sentence summary of the plot event here]\n**Choices:**\n- [Choice 1 Text] (+Metric1, -Metric2) -> Leads to Node 2\n- [Choice 2 Text] (+Metric3) -> Leads to Node 3\n\n## Node 2: [Node Name]\n**Description:** [1-sentence summary]\n**Choices:**\n- [Choice 1 Text] -> Leads to Node 4\n\n(Continue this exact format for all remaining nodes. Include at least 1 ending node with empty Choices.)\n" + lang_instruction
     user_prompt = "User Concept:\n" + app.step_contents[0] + "\n\nWorld Bible:\n" + app.step_contents[1]
   } else if step == 3 {
-    system_prompt = "You are a Screenwriter and Art Director. Based on the State Machine Blueprint, flesh out the actual narrative content for every single Node. For each Node, you must provide:\n1. The Node ID (matching the blueprint).\n2. Detailed Narrative Text: Write the actual story, dialogue, and visceral descriptions of the protagonist's actions and environment. Maintain a consistent tone and emotional core. CRITICAL: The story must closely follow the [Story Summary] and [Plot Synopsis] provided in the User Concept.\n3. Cinematography: Describe the environment and lighting for this specific scene. (Keep it a static fixed perspective, no dynamic camera movements).\n4. The Choices available (matching the blueprint exactly).\nCRITICAL: Ensure the story flows seamlessly from one node to its connected target nodes. Foreshadowing planted in early nodes must pay off in later nodes.\nCRITICAL LANGUAGE REQUIREMENT: ALL generated story text, dialogue, descriptions, and choices MUST be entirely written in the user's requested language. DO NOT output English if another language is requested.\n" + lang_instruction
+    system_prompt = "You are a Screenwriter and Art Director. Based on the State Machine Blueprint, flesh out the actual narrative content for every single Node. For each Node, you must provide:\n1. The Node ID (matching the blueprint).\n2. Detailed Narrative Text: Write the actual story, dialogue, and visceral descriptions of the protagonist's actions and environment. Maintain a consistent tone and emotional core. CRITICAL: The story must closely follow the [Story Summary] and [Plot Synopsis] provided in the User Concept.\n3. Cinematography: Describe the environment and lighting for this specific scene. (Keep it a static fixed perspective, no dynamic camera movements).\n4. The Choices available (matching the blueprint exactly).\nCRITICAL: Ensure the story flows seamlessly from one node to its connected target nodes. Foreshadowing planted in early nodes must pay off in later nodes.\nCRITICAL: Every node must be fully written. Never output placeholders like '(from previous...)', '[CONTINUE]', '...', 'TBD', or incomplete fragments.\nCRITICAL LANGUAGE REQUIREMENT: ALL generated story text, dialogue, descriptions, and choices MUST be entirely written in the user's requested language. DO NOT output English if another language is requested.\n" + lang_instruction
     user_prompt = "User Concept:\n" + app.step_contents[0] + "\n\nWorld Bible:\n" + app.step_contents[1] + "\n\nState Machine Blueprint:\n" + app.step_contents[2]
   } else if step == 4 {
     system_prompt = "You are a Technical Data Compiler. Your ONLY job is to convert the provided detailed script into a strict JSON state-machine graph. You MUST output a SINGLE valid JSON object with a root key 'nodes' containing an array of node objects.\nEach node must have:\n1. 'id' (string, exactly matching the script)\n2. 'narrative' (object with 'text_content' and 'mood')\n3. 'cinematography' (object with 'environment_desc', 'scale_meters': {width, height, depth}, 'lighting', and 'image_prompt')\n4. 'gameplay' (object with 'required_conditions' map, 'state_changes' map, 'mechanic_trigger' string, and 'choices' array).\nEach choice must have 'text', 'target_id', and optionally 'condition'.\nDO NOT output any markdown, only valid JSON. DO NOT invent new story content; serialize exactly what is provided.\nCRITICAL LANGUAGE REQUIREMENT: ALL text fields ('text_content', 'mood', 'environment_desc', 'lighting', choice 'text') MUST be translated into the user's requested language. ONLY 'image_prompt' must be in English.\n" + lang_instruction + "\nCRITICAL REQUIREMENTS:\n1. 'image_prompt' MUST BE IN ENGLISH. The image prompt should describe the OVERALL SCENE AND ENVIRONMENT matching the Art Style provided in the User Concept. CRITICAL: You MUST explicitly describe the relevant NPC characters (who speak or act in this node) appearing inside this environment. Do NOT describe an empty room. Describe what the NPCs look like and where they are standing in the scene. However, EXPLICITLY EXCLUDE the main protagonist (the player character) from the image_prompt. You MUST append ', static fixed perspective, masterpiece, 8k resolution, unreal engine 5 render, highly detailed' to the end of every image_prompt.\n2. Node ID Validation: Every 'target_id' in 'choices' MUST exactly match the 'id' of an existing node in your output. Endings must have an empty 'choices' array `[]`."
@@ -146,7 +182,7 @@ fn start_generation_step(app: App, step: Int) -> Unit {
     _ => println("Failed to write request.json")
   }
 
-  let worker_path = @net.get_exe_dir() + "\\llm_worker_v3.exe"
+  let worker_path = resolve_worker_exe(@net.get_exe_dir(), "llm_worker")
   @webui.system_command("start /B \"\" \"" + worker_path + "\" \"" + req_file + "\" \"" + res_file + "\"")
 }
 
@@ -239,7 +275,7 @@ fn main {
                   let req_json = Json::object(req_obj)
                   @fs.write_string_to_file(req_file, req_json.stringify())
                   
-                  let worker_path = @net.get_exe_dir() + "\\llm_worker_v3.exe"
+                  let worker_path = resolve_worker_exe(@net.get_exe_dir(), "llm_worker")
                   @webui.system_command("start /B /WAIT \"\" \"" + worker_path + "\" \"" + req_file + "\" \"" + res_file + "\"")
                   
                   if @fs.path_exists(res_file) {
@@ -314,7 +350,8 @@ fn main {
                                           let item : Map[String, Json] = {
                                               "name": clean_name.to_json(),
                                               "prompt": image_prompt.to_json(),
-                                              "status": (if exists { "done" } else { "pending" }).to_json()
+                                          "kind": "scene_2d".to_json(),
+                                          "status": (if exists { "done" } else { "pending" }).to_json()
                                           }
                                           arr.push(Json::object(item))
                                       }
@@ -376,6 +413,7 @@ fn main {
                               let item : Map[String, Json] = {
                                   "name": clean_name.to_json(),
                                   "prompt": image_prompt.to_json(),
+                                  "kind": "input_3d".to_json(),
                                   "status": (if exists { "done" } else { "pending" }).to_json()
                               }
                               arr.push(Json::object(item))
@@ -502,10 +540,10 @@ fn main {
                                       
                                       if image_prompt != "" {
                                           let clean_prompt = image_prompt.replace_all(old="\"", new="'") + ", anime visual novel background, 2d game art, high quality, masterpiece"
-                                          let clean_name = app.project_id + "_" + id // Changed to match frontend expected filename
+                                          let clean_name = "scene_" + ascii_id
                                           let out_path = app.project_id + "\\" + clean_name + ".png"
                                           let comfy_url = if app.config.comfy_mode == "runcomfy" { "runcomfy|" + app.config.runcomfy_api_key } else { app.config.comfy_url }
-                                          let worker_path = @net.get_exe_dir() + "\\comfy_worker_v3.exe"
+                                          let worker_path = resolve_worker_exe(@net.get_exe_dir(), "comfy_worker")
                                           bat_content = bat_content + "call \"" + worker_path + "\" \"" + comfy_url + "\" \"" + clean_prompt + "\" \"" + out_path + "\"\r\n"
                                       }
                                   }
@@ -561,7 +599,7 @@ fn main {
                               
                               let out_path = app.project_id + "\\" + ascii_name + ".png"
                               let comfy_url = if app.config.comfy_mode == "runcomfy" { "runcomfy|" + app.config.runcomfy_api_key } else { app.config.comfy_url }
-                              let worker_path = @net.get_exe_dir() + "\\comfy_worker_v3.exe"
+                              let worker_path = resolve_worker_exe(@net.get_exe_dir(), "comfy_worker")
                               bat_content = bat_content + "call \"" + worker_path + "\" \"" + comfy_url + "\" \"" + clean_prompt + "\" \"" + out_path + "\"\r\n"
                           }
                       }
@@ -696,7 +734,7 @@ fn main {
                           let in_image = app.project_id + "\\" + ascii_name + ".png"
                           let out_name = app.project_id + "\\" + ascii_name
                           let comfy_url = if app.config.comfy_mode == "runcomfy" { "runcomfy|" + app.config.runcomfy_api_key } else { app.config.comfy_url }
-                          let worker_path = @net.get_exe_dir() + "\\comfy_3d_worker_v3.exe"
+                          let worker_path = resolve_worker_exe(@net.get_exe_dir(), "comfy_3d_worker")
                           bat_content = bat_content + "call \"" + worker_path + "\" \"" + comfy_url + "\" \"" + in_image + "\" \"" + out_name + "\"\r\n"
                       }
                   }
@@ -734,7 +772,7 @@ fn main {
       let temp_ps = "pick_folder.ps1"
       let temp_out = "picked_folder.txt"
       
-      let ps_script = "Add-Type -AssemblyName System.windows.forms\n$folderBrowser = New-Object System.Windows.Forms.FolderBrowserDialog\n$folderBrowser.Description = 'Select a Game Project Folder'\n$folderBrowser.SelectedPath = (Get-Item -Path '..\\Projects').FullName\nif ($folderBrowser.ShowDialog() -eq 'OK') {\n    [IO.File]::WriteAllText('picked_folder.txt', $folderBrowser.SelectedPath)\n} else {\n    [IO.File]::WriteAllText('picked_folder.txt', 'CANCELLED')\n}\n"
+      let ps_script = "Add-Type -AssemblyName System.Windows.Forms\n$initialPath = Join-Path (Get-Location) '..\\Projects'\nif (-not (Test-Path $initialPath)) { $initialPath = Get-Location }\n$owner = New-Object System.Windows.Forms.Form\n$owner.TopMost = $true\n$owner.ShowInTaskbar = $false\n$owner.WindowState = 'Minimized'\n$owner.Opacity = 0\n$owner.Show()\n$folderBrowser = New-Object System.Windows.Forms.FolderBrowserDialog\n$folderBrowser.Description = 'Select a Game Project Folder'\n$folderBrowser.SelectedPath = (Resolve-Path $initialPath).Path\n$result = $folderBrowser.ShowDialog($owner)\n$owner.Close()\nif ($result -eq [System.Windows.Forms.DialogResult]::OK) {\n    [IO.File]::WriteAllText('picked_folder.txt', $folderBrowser.SelectedPath)\n} else {\n    [IO.File]::WriteAllText('picked_folder.txt', 'CANCELLED')\n}\n"
       try {
           @fs.write_string_to_file(temp_ps, ps_script)
           @webui.system_command("powershell -ExecutionPolicy Bypass -File pick_folder.ps1")
@@ -900,9 +938,16 @@ fn main {
 
   @webui.on(window, "backend_start_pipeline", fn(w, _prompt, event_number) {
       w |> ignore
-      app.current_step = 1
-      start_generation_step(app, 1)
-      @webui.webui_set_response(window, event_number, "ok")
+      let next_step = find_next_pipeline_step(app)
+      if next_step == 0 {
+          @webui.webui_set_response(window, event_number, "need_concept")
+      } else if next_step >= 6 {
+          @webui.webui_set_response(window, event_number, "already_done")
+      } else {
+          app.current_step = next_step
+          start_generation_step(app, next_step)
+          @webui.webui_set_response(window, event_number, "ok")
+      }
   })
   
   @webui.on(window, "backend_poll_pipeline", fn(w, _req, event_number) {
@@ -1016,6 +1061,79 @@ fn main {
       }
   })
 
+  @webui.on(window, "backend_load_game_json", fn(w, _req, event_number) {
+      w |> ignore
+      let mut json_str = ""
+      if app.step_contents[4] != "" {
+          json_str = extract_json_from_markdown(app.step_contents[4])
+      } else {
+          let state_file = app.project_id + "\\state.json"
+          if @fs.path_exists(state_file) {
+              let state_str = @fs.read_file_to_string(state_file) catch { _ => "" }
+              if state_str != "" {
+                  let parsed_state = @json.parse(state_str) catch { _ => Json::object(Map::new()) }
+                  match parsed_state {
+                      Json::Object(m) => {
+                          match m.get("step_contents") {
+                              Some(Json::Array(arr)) => {
+                                  if arr.length() > 4 {
+                                      match arr[4] {
+                                          Json::String(s) => json_str = extract_json_from_markdown(s)
+                                          _ => ()
+                                      }
+                                  }
+                              }
+                              _ => ()
+                          }
+                      }
+                      _ => ()
+                  }
+              }
+          }
+      }
+
+      if json_str == "" {
+          @webui.webui_set_response(window, event_number, "error")
+      } else {
+          let parsed = @json.parse(json_str) catch { _ => Json::object(Map::new()) }
+          match parsed {
+              Json::Object(m) => {
+                  match m.get("nodes") {
+                      Some(Json::Array(_)) => @webui.webui_set_response(window, event_number, json_str)
+                      _ => @webui.webui_set_response(window, event_number, "error")
+                  }
+              }
+              _ => @webui.webui_set_response(window, event_number, "error")
+          }
+      }
+  })
+
+  @webui.on(window, "backend_start_raylib_preview", fn(w, _req, event_number) {
+      w |> ignore
+      let studio_dir = @net.get_exe_dir()
+      let engine_dir = studio_dir + "\\..\\aetheria_engine"
+      let candidates = [
+          engine_dir + "\\Aetheria3D_GLB.exe",
+          engine_dir + "\\Aetheria3D.exe",
+          engine_dir + "\\_build\\native\\debug\\build\\cmd_glb\\cmd_glb.exe",
+          engine_dir + "\\_build\\native\\debug\\build\\cmd\\main\\main.exe"
+      ]
+      let mut target_exe = ""
+      for i = 0; i < candidates.length(); i = i + 1 {
+          if @fs.path_exists(candidates[i]) {
+              target_exe = candidates[i]
+              break
+          }
+      }
+      if target_exe == "" {
+          @webui.webui_set_response(window, event_number, "missing")
+      } else {
+          let cmd = "cmd /c start \"\" /D \"" + engine_dir + "\" \"" + target_exe + "\" \"" + app.project_id + "\""
+          @webui.system_command(cmd)
+          @webui.webui_set_response(window, event_number, "started")
+      }
+  })
+
   ignore(@webui.on(window, "backend_prepare_file", fn(w, req, event_number) {
       ignore(w)
       let filename = req
@@ -1083,6 +1201,8 @@ fn main {
   
   // Set infinite timeout so WebUI wait doesn't close prematurely
   @webui.webui_set_timeout(0)
+  @webui.webui_set_size(window, 1600, 960)
+  @webui.webui_set_minimum_size(window, 1200, 760)
   
   let abs_assets = @net.get_exe_dir() + "\\assets"
   ignore(@webui.webui_set_root_folder(window, abs_assets))

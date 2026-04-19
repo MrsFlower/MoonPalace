@@ -85,8 +85,8 @@
             <h2 id="title-3d-model">3D Model Generation & Game Preview</h2>
             <div style="margin-bottom: 10px; display: flex; gap: 10px;">
                 <button id="btnGenerate3D" onclick="app.generateAll3DAssets()">Generate 3D Models</button>
-                <button id="btnLoad3D" onclick="app.load3DAssets()" class="btn-secondary">Load 3D Assets</button>
-                <button id="btnStart3DGame" onclick="app.start3DGamePreview()" class="btn-secondary">Start 3D Game</button>
+                <button id="btnStart3DGame" onclick="app.start3DGamePreview()" class="btn-secondary">3D Game Preview</button>
+                <button id="btnStartRaylib" onclick="app.startRaylibPreview()" class="btn-secondary">启动Raylib渲染</button>
             </div>
             <div id="model-queue-container" style="background: #1e1e1e; padding: 15px; border-radius: 5px; height: calc(100vh - 120px); overflow-y: auto;">
                 <div id="model-queue-list" style="display: flex; flex-direction: column; gap: 10px;">
