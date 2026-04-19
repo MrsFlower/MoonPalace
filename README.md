@@ -65,10 +65,19 @@ Windows 可直接运行：
 .\build.bat
 ```
 
-完成后运行 `AetheriaStudio_v3.exe`，在 `System Settings` 中配置：
+完成后运行 `AetheriaStudio_v4.exe`，在 `System Settings` 中配置：
 
 - LLM API（用于文本与 JSON 生成）
 - ComfyUI / RunComfy 配置（用于 2D/3D 资产生成）
+
+### LLM 推荐配置（当前）
+
+- 推荐优先使用 Gemini API（项目默认 `api_provider` 即为 `Gemini`）。
+- 默认模型分工：
+  - 创意生成（世界观/剧情扩写）：`gemini-2.5-pro`
+  - 结构化生成（JSON/状态机）：`gemini-2.5-flash`
+- 当前联调与测试主要使用：`gemini-2.5-flash`（结构化链路稳定、速度更快）。
+- API Key 推荐使用环境变量：`GEMINI_API_KEY`（配置中可写 `ENV:GEMINI_API_KEY`）。
 
 ### 路线 B：单独运行引擎
 
@@ -106,6 +115,7 @@ moon build --target native
 
 - [MoonBit](https://www.moonbitlang.com/)
 - [Raylib](https://www.raylib.com/)
+- Raylib C FFI（MoonBit <-> Raylib 的原生绑定实现，位于 `aetheria_engine/src/raylib`）
 - [WebUI](https://webui.me/)
 - [Three.js](https://threejs.org/)
 - [ComfyUI](https://github.com/comfyanonymous/ComfyUI)

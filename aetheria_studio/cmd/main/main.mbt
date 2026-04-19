@@ -539,7 +539,14 @@ fn main {
                                       }
                                       
                                       if image_prompt != "" {
-                                          let clean_prompt = image_prompt.replace_all(old="\"", new="'") + ", anime visual novel background, 2d game art, high quality, masterpiece"
+                                          let clean_prompt = (
+                                              image_prompt
+                                              .replace_all(old="\"", new="'")
+                                              .replace_all(old="\r", new=" ")
+                                              .replace_all(old="\n", new=" ")
+                                              .replace_all(old="\t", new=" ")
+                                              .replace_all(old="%", new="%%")
+                                          ) + ", anime visual novel background, 2d game art, high quality, masterpiece"
                                           let clean_name = "scene_" + ascii_id
                                           let out_path = app.project_id + "\\" + clean_name + ".png"
                                           let comfy_url = if app.config.comfy_mode == "runcomfy" { "runcomfy|" + app.config.runcomfy_api_key } else { app.config.comfy_url }
@@ -588,7 +595,12 @@ fn main {
                           }
                           
                           if image_prompt != "" {
-                              let clean_prompt = image_prompt.replace_all(old="\"", new="'")
+                              let clean_prompt = image_prompt
+                                  .replace_all(old="\"", new="'")
+                                  .replace_all(old="\r", new=" ")
+                                  .replace_all(old="\n", new=" ")
+                                  .replace_all(old="\t", new=" ")
+                                  .replace_all(old="%", new="%%")
                               let mut ascii_name = ""
                               for j = 0; j < name.length(); j = j + 1 {
                                   let c = name[j].to_int()

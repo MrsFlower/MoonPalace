@@ -8,6 +8,27 @@ let config: ComfyConfig = { url: "http://127.0.0.1:8188", is_runcomfy: false, ru
 
 let workflow_file = "fluxworkflow.json"
 
+fn sanitize_prompt_for_http(s: String) -> String {
+  let mut out = ""
+  for c in s {
+    let code = c.to_int()
+    // Drop surrogate code points (invalid Unicode scalar values).
+    if code >= 0xD800 && code <= 0xDFFF {
+      continue
+    }
+    // Drop most C0 control chars, keep common whitespace.
+    if code < 32 && code != 9 && code != 10 && code != 13 {
+      continue
+    }
+    out = out + String::make(1, c)
+  }
+  // Keep payload single-line and stable for downstream workflow nodes.
+  out
+    .replace_all(old="\r", new=" ")
+    .replace_all(old="\n", new=" ")
+    .replace_all(old="\t", new=" ")
+}
+
 fn get_image(filename: String, subfolder: String, folder_type: String) -> Result[Bytes, String] {
   let encoded_filename = filename.replace_all(old=" ", new="%20")
   let url = config.url + "/view?filename=" + encoded_filename + "&subfolder=" + subfolder + "&type=" + folder_type
@@ -124,7 +145,8 @@ fn simple_random() -> Double {
   safe_r.to_double()
 }
 
-fn generate_image(prompt_text: String, output_filename: String) -> Bool {
+fn generate_image(prompt_text_raw: String, output_filename: String) -> Bool {
+  let prompt_text = sanitize_prompt_for_http(prompt_text_raw)
   if config.is_runcomfy {
     // RunComfy approach
     let overrides = Json::object(Map::from_array([
