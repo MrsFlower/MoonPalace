@@ -79,6 +79,121 @@ Windows 可直接运行：
 - 当前联调与测试主要使用：`gemini-2.5-flash`（结构化链路稳定、速度更快）。
 - API Key 推荐使用环境变量：`GEMINI_API_KEY`（配置中可写 `ENV:GEMINI_API_KEY`）。
 
+### ComfyUI / Trellis2 / Flux 配置（Windows）
+
+以下步骤用于本地 2D（Flux）与 3D（Trellis2）链路，建议在独立 Conda 环境中完成。
+
+#### 最短可跑版（先跑通）
+
+```bash
+# 1) 环境
+conda create -n trellis2 python=3.11
+conda activate trellis2
+
+# 2) PyTorch（cu128）
+pip install torch==2.7.0 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+# 3) 安装 ComfyUI + Trellis2
+git clone https://github.com/comfyanonymous/ComfyUI.git
+cd ComfyUI
+pip install -r requirements.txt
+cd custom_nodes
+git clone https://github.com/visualbruno/ComfyUI-Trellis2.git
+cd ComfyUI-Trellis2
+
+# 4) 安装 Trellis2 wheels（Torch270 / cp311）
+pip install --force-reinstall ./wheels/Windows/Torch270/o_voxel-0.0.1-cp311-cp311-win_amd64.whl
+pip install --force-reinstall ./wheels/Windows/Torch270/flex_gemm-0.0.1-cp311-cp311-win_amd64.whl
+pip install --force-reinstall ./wheels/Windows/Torch270/cumesh-1.0-cp311-cp311-win_amd64.whl
+pip install --force-reinstall ./wheels/Windows/Torch270/nvdiffrast-0.4.0-cp311-cp311-win_amd64.whl
+pip install --force-reinstall ./wheels/Windows/Torch270/nvdiffrec_render-0.0.0-cp311-cp311-win_amd64.whl
+
+# 5) 安装 FlashAttention（cu128 + torch2.7 对应包）
+pip install flash_attn-2.8.3+cu128torch2.7-cp311-cp311-win_amd64.whl
+```
+
+模型最小放置要求：
+
+- `t5xxl_fp16.safetensors`、`clip_l.safetensors` -> `ComfyUI/models/clip/`
+- `ae.safetensors` -> `ComfyUI/models/vae/`
+- `flux1-dev.safetensors` -> `ComfyUI/models/unet/`
+- `dinov3-vitl16-pretrain-lvd1689m` -> `ComfyUI/models/facebook/`
+
+耗时预期（建议在 UI 中明确提示）：
+
+- 2D 约 `45 秒 / 张`
+- 3D 约 `18 分钟 / 个`
+
+#### 完整版（全量配置与排障）
+
+##### 1) 环境与核心依赖
+
+```bash
+# 1. 创建干净环境（强烈建议 Python 3.11，wheels 主要是 cp311）
+conda create -n trellis2 python=3.11
+conda activate trellis2
+
+# 2. 安装 PyTorch 2.7 + cu128（必须用 pip，不能用 conda 的 pytorch-cuda）
+pip install torch==2.7.0 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+# （或者用 2.8.0，如果你要对应 Torch280 的 wheels）
+
+# 3. 安装 ComfyUI（推荐干净安装）
+git clone https://github.com/comfyanonymous/ComfyUI.git
+cd ComfyUI
+pip install -r requirements.txt
+
+# 4. 安装 Trellis2 扩展
+cd custom_nodes
+git clone https://github.com/visualbruno/ComfyUI-Trellis2.git
+cd ComfyUI-Trellis2
+
+# 5. 安装预编译 wheels（关键！路径改成你本机实际路径）
+pip install --force-reinstall ./wheels/Windows/Torch270/o_voxel-0.0.1-cp311-cp311-win_amd64.whl
+pip install --force-reinstall ./wheels/Windows/Torch270/flex_gemm-0.0.1-cp311-cp311-win_amd64.whl
+pip install --force-reinstall ./wheels/Windows/Torch270/cumesh-1.0-cp311-cp311-win_amd64.whl
+pip install --force-reinstall ./wheels/Windows/Torch270/nvdiffrast-0.4.0-cp311-cp311-win_amd64.whl
+pip install --force-reinstall ./wheels/Windows/Torch270/nvdiffrec_render-0.0.0-cp311-cp311-win_amd64.whl
+
+# 6. 安装 FlashAttention 预编译包（必须匹配 cu128 + torch2.7）
+# 下载来源：搜索 kingbri1/flash-attention 或社区最新 wheel
+pip install flash_attn-2.8.3+cu128torch2.7-cp311-cp311-win_amd64.whl
+
+# 7. 其他依赖
+pip install -r requirements.txt
+```
+
+##### 2) Flux.1 Dev 模型文件放置
+
+- `t5xxl_fp16.safetensors`、`clip_l.safetensors` 放到 `ComfyUI/models/clip/`
+- `ae.safetensors` 放到 `ComfyUI/models/vae/`
+- `flux1-dev.safetensors` 放到 `ComfyUI/models/unet/`
+
+模型下载参考：
+
+- Clip 模型：[flux_text_encoders](https://huggingface.co/comfyanonymous/flux_text_encoders/tree/main)
+- VAE 模型：[FLUX.1-dev](https://huggingface.co/black-forest-labs/FLUX.1-dev/tree/main)
+- UNet 模型（量化版）：[flux-fp8](https://huggingface.co/Kijai/flux-fp8/tree/main)
+
+简要理解：
+
+- `t5xxl_fp16.safetensors` 与 `clip_l.safetensors`：文本编码器
+- `ae.safetensors`：VAE
+- `flux1-dev.safetensors`：底模（UNet）
+
+##### 3) 安装与运行常见问题
+
+- FlashAttention wheel 如果安装失败，可临时改用 `xformers` 路线（按教程修改 `full_attn.py`）。
+- DINOv3 模型别忘了下载并放到：`ComfyUI/models/facebook/dinov3-vitl16-pretrain-lvd1689m`
+- 使用 `hf-mirror` 时弹出 Git Credential Manager 输入框，通常不是权限问题：
+  - `hf-mirror.com` 对公开模型可匿名拉取；
+  - GCM 弹窗是 Git for Windows 对 HTTPS 的默认行为，不代表必须登录。
+
+##### 4) 生成耗时提示（给用户）
+
+- 2D 图生成通常约 `45 秒 / 张`（受显卡和工作流影响）
+- 3D 模型生成通常约 `18 分钟 / 个`
+- 建议在 UI 中给出“长任务处理中”的明确提示，避免误判为卡死
+
 ### 路线 B：单独运行引擎
 
 ```bash
