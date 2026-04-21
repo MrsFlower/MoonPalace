@@ -7,8 +7,12 @@
 #include <string.h>
 
 // Text buffer to safely receive string data from Moonbit
-static char text_buffer[1024];
+static char text_buffer[65536];
 static int text_len = 0;
+static Font ui_font = {0};
+static char ui_font_path[1024] = {0};
+static int ui_font_loaded = 0;
+static int ui_font_size = 32;
 
 void clear_text_buffer() {
     text_len = 0;
@@ -16,10 +20,29 @@ void clear_text_buffer() {
 }
 
 void append_text_char(int32_t c) {
-    if (text_len < 1023) {
-        text_buffer[text_len++] = (char)c;
-        text_buffer[text_len] = '\0';
+    if (c < 0) return;
+    if (c <= 0x7F) {
+        if (text_len < 65535) text_buffer[text_len++] = (char)c;
+    } else if (c <= 0x7FF) {
+        if (text_len < 65534) {
+            text_buffer[text_len++] = (char)(0xC0 | ((c >> 6) & 0x1F));
+            text_buffer[text_len++] = (char)(0x80 | (c & 0x3F));
+        }
+    } else if (c <= 0xFFFF) {
+        if (text_len < 65533) {
+            text_buffer[text_len++] = (char)(0xE0 | ((c >> 12) & 0x0F));
+            text_buffer[text_len++] = (char)(0x80 | ((c >> 6) & 0x3F));
+            text_buffer[text_len++] = (char)(0x80 | (c & 0x3F));
+        }
+    } else if (c <= 0x10FFFF) {
+        if (text_len < 65532) {
+            text_buffer[text_len++] = (char)(0xF0 | ((c >> 18) & 0x07));
+            text_buffer[text_len++] = (char)(0x80 | ((c >> 12) & 0x3F));
+            text_buffer[text_len++] = (char)(0x80 | ((c >> 6) & 0x3F));
+            text_buffer[text_len++] = (char)(0x80 | (c & 0x3F));
+        }
     }
+    text_buffer[text_len] = '\0';
 }
 
 static Texture2D current_atlas = {0};
@@ -95,7 +118,91 @@ void draw_voxel_faces(double x, double y, double z, double size,
 
 void draw_text_from_buffer(int32_t x, int32_t y, int32_t fontSize, int32_t r, int32_t g, int32_t b, int32_t a) {
     Color color = { (unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)a };
-    DrawText(text_buffer, x, y, fontSize, color);
+    if (ui_font_loaded) {
+        DrawTextEx(ui_font, text_buffer, (Vector2){(float)x, (float)y}, (float)fontSize, 1.0f, color);
+    } else {
+        DrawText(text_buffer, x, y, fontSize, color);
+    }
+}
+
+int32_t load_ui_font_from_buffer(int32_t font_size) {
+    if (text_len <= 0) return 0;
+    strncpy(ui_font_path, text_buffer, sizeof(ui_font_path) - 1);
+    ui_font_path[sizeof(ui_font_path) - 1] = '\0';
+    ui_font_size = font_size > 0 ? font_size : 32;
+    if (ui_font_loaded) {
+        UnloadFont(ui_font);
+        ui_font_loaded = 0;
+    }
+    ui_font = LoadFontEx(ui_font_path, ui_font_size, NULL, 0);
+    if (ui_font.texture.id > 0) {
+        SetTextureFilter(ui_font.texture, TEXTURE_FILTER_BILINEAR);
+        ui_font_loaded = 1;
+        return 1;
+    }
+    return 0;
+}
+
+static int has_codepoint(const int* arr, int count, int cp) {
+    for (int i = 0; i < count; i++) {
+        if (arr[i] == cp) return 1;
+    }
+    return 0;
+}
+
+int32_t refresh_ui_font_charset_from_buffer() {
+    if (ui_font_path[0] == '\0') return 0;
+
+    int cps[4096];
+    int count = 0;
+    for (int cp = 32; cp <= 126 && count < 4096; cp++) cps[count++] = cp;
+
+    // Parse UTF-8 text_buffer and collect unique code points.
+    for (int i = 0; i < text_len && count < 4096; ) {
+        unsigned char b0 = (unsigned char)text_buffer[i];
+        int cp = -1;
+        int step = 1;
+        if (b0 < 0x80) {
+            cp = b0;
+        } else if ((b0 & 0xE0) == 0xC0 && i + 1 < text_len) {
+            unsigned char b1 = (unsigned char)text_buffer[i + 1];
+            if ((b1 & 0xC0) == 0x80) {
+                cp = ((b0 & 0x1F) << 6) | (b1 & 0x3F);
+                step = 2;
+            }
+        } else if ((b0 & 0xF0) == 0xE0 && i + 2 < text_len) {
+            unsigned char b1 = (unsigned char)text_buffer[i + 1];
+            unsigned char b2 = (unsigned char)text_buffer[i + 2];
+            if (((b1 & 0xC0) == 0x80) && ((b2 & 0xC0) == 0x80)) {
+                cp = ((b0 & 0x0F) << 12) | ((b1 & 0x3F) << 6) | (b2 & 0x3F);
+                step = 3;
+            }
+        } else if ((b0 & 0xF8) == 0xF0 && i + 3 < text_len) {
+            unsigned char b1 = (unsigned char)text_buffer[i + 1];
+            unsigned char b2 = (unsigned char)text_buffer[i + 2];
+            unsigned char b3 = (unsigned char)text_buffer[i + 3];
+            if (((b1 & 0xC0) == 0x80) && ((b2 & 0xC0) == 0x80) && ((b3 & 0xC0) == 0x80)) {
+                cp = ((b0 & 0x07) << 18) | ((b1 & 0x3F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F);
+                step = 4;
+            }
+        }
+        if (cp >= 0 && cp <= 0x10FFFF && !has_codepoint(cps, count, cp)) {
+            cps[count++] = cp;
+        }
+        i += step;
+    }
+
+    if (ui_font_loaded) {
+        UnloadFont(ui_font);
+        ui_font_loaded = 0;
+    }
+    ui_font = LoadFontEx(ui_font_path, ui_font_size, cps, count);
+    if (ui_font.texture.id > 0) {
+        SetTextureFilter(ui_font.texture, TEXTURE_FILTER_BILINEAR);
+        ui_font_loaded = 1;
+        return 1;
+    }
+    return 0;
 }
 
 void DrawRectangle_wrapper(int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int32_t g, int32_t b, int32_t a) {
@@ -257,6 +364,10 @@ void EndMode3D_wrapper() {
 
 // Simple Model Loading (Stores globally to avoid managing pointers in Moonbit C backend for now)
 static Model global_model = { 0 };
+static float global_base_scale = 1.0f;
+static float global_center_x = 0.0f;
+static float global_center_z = 0.0f;
+static float global_min_y = 0.0f;
 
 #define MAX_CHUNKS 128
 static Model chunk_models[MAX_CHUNKS] = { 0 };
@@ -673,27 +784,27 @@ void load_global_model_from_buffer() {
     }
     global_model = LoadModel(text_buffer);
     
-    // Auto-center the mesh but do not scale it
+    // Normalize using full model bounds (all meshes), not mesh[0].
     if (global_model.meshCount > 0) {
-        BoundingBox bounds = GetMeshBoundingBox(global_model.meshes[0]);
-        
-        // Voxelizer offsets the chunk center by -(width * 0.5) / 2.0
-        // So the GLB should also be strictly aligned to that exactly
-        float scale = 80.0f; // Uniform scale factor used in Voxelizer
-        float model_width = bounds.max.x - bounds.min.x;
-        float actual_scale = scale / model_width;
-        
-        Vector3 center = {
-            (bounds.min.x + bounds.max.x) / 2.0f,
-            bounds.min.y, // Keep the floor at y=0
-            (bounds.min.z + bounds.max.z) / 2.0f
-        };
-        
-        // Translate center to 0,0,0 then apply scale
-        Matrix translation = MatrixTranslate(-center.x, -center.y, -center.z);
-        // We MUST bake the scaling into the transform right now so it actually moves the origin to the correct scaled spot
-        Matrix scaling = MatrixScale(actual_scale, actual_scale, actual_scale);
-        global_model.transform = MatrixMultiply(translation, scaling);
+        BoundingBox bounds = GetModelBoundingBox(global_model);
+        float extent_x = bounds.max.x - bounds.min.x;
+        float extent_y = bounds.max.y - bounds.min.y;
+        float extent_z = bounds.max.z - bounds.min.z;
+        float max_extent = extent_x;
+        if (extent_y > max_extent) max_extent = extent_y;
+        if (extent_z > max_extent) max_extent = extent_z;
+        if (max_extent < 0.0001f) max_extent = 1.0f;
+
+        // Target a consistent world size so first-person perception feels stable across scenes.
+        const float target_extent = 9.2f;
+        global_base_scale = target_extent / max_extent;
+        if (global_base_scale < 0.001f) global_base_scale = 0.001f;
+        if (global_base_scale > 1000.0f) global_base_scale = 1000.0f;
+
+        global_center_x = (bounds.min.x + bounds.max.x) * 0.5f;
+        global_center_z = (bounds.min.z + bounds.max.z) * 0.5f;
+        global_min_y = bounds.min.y;
+        global_model.transform = MatrixIdentity();
         
         for (int i = 0; i < global_model.materialCount; i++) {
             global_model.materials[i].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
@@ -702,6 +813,9 @@ void load_global_model_from_buffer() {
             Shader fog_shader = LoadShaderFromMemory(fog_vs, fog_fs);
             global_model.materials[i].shader = fog_shader;
         }
+
+        printf("[DEBUG] Model normalized: base_scale=%.6f, max_extent=%.4f, center=(%.3f, %.3f), min_y=%.3f\n",
+               global_base_scale, max_extent, global_center_x, global_center_z, global_min_y);
     }
 }
 
@@ -710,11 +824,17 @@ void draw_global_model_wrapper(double x, double y, double z, double scale) {
     rlDisableBackfaceCulling();
     
     if (global_model.meshCount > 0) {
-        Vector3 position = { (float)x, (float)y, (float)z };
+        float semantic_scale = (float)scale;
+        if (semantic_scale <= 0.0f) semantic_scale = 1.0f;
+        float final_scale = global_base_scale * semantic_scale;
+        Vector3 position = {
+            (float)x - global_center_x * final_scale,
+            (float)y - global_min_y * final_scale,
+            (float)z - global_center_z * final_scale
+        };
         Vector3 rotationAxis = { 1.0f, 0.0f, 0.0f };
         float rotationAngle = 0.0f; // No rotation by default
-        // The scale is already baked into the transform!
-        Vector3 scaleVec = { 1.0f, 1.0f, 1.0f };
+        Vector3 scaleVec = { final_scale, final_scale, final_scale };
         
         DrawModelEx(global_model, position, rotationAxis, rotationAngle, scaleVec, WHITE);
     }

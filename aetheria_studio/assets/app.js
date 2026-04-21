@@ -1424,7 +1424,7 @@ const app = {
             if (res === "started") {
                 this.setStatus("Raylib 渲染窗口已启动。");
             } else {
-                this.setStatus("未找到 Raylib 可执行文件，请先编译 aetheria_engine。", true);
+                this.setStatus("未找到 GLB 渲染可执行文件，请先在 aetheria_engine 运行 build_glb.bat。", true);
             }
         }).catch(err => {
             console.error("startRaylibPreview failed:", err);

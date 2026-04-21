@@ -51,6 +51,8 @@ struct App {
   step_contents: Array[String]
   mut project_id: String
   mut config: @config.Config
+  retry_counts: Array[Int]
+  retry_feedback: Array[String]
 }
 
 fn resolve_worker_exe(exe_dir: String, worker_base_name: String) -> String {
@@ -77,6 +79,61 @@ fn find_next_pipeline_step(app: App) -> Int {
   6
 }
 
+fn count_blueprint_nodes(content: String) -> Int {
+  let mut count = 0
+  let mut line = ""
+  for c in content {
+    if c == '\n' {
+      if line.has_prefix("## Node ") {
+        count = count + 1
+      }
+      line = ""
+    } else if c != '\r' {
+      line = line + String::make(1, c)
+    }
+  }
+  if line.has_prefix("## Node ") {
+    count = count + 1
+  }
+  count
+}
+
+fn parse_step4_node_count(content: String) -> Int {
+  let json_str = extract_json_from_markdown(content)
+  let parsed = try { @json.parse(json_str) } catch { _ => Json::object(Map::new()) }
+  match parsed {
+    Json::Object(m) => {
+      match m.get("nodes") {
+        Some(Json::Array(arr)) => arr.length()
+        _ => -1
+      }
+    }
+    _ => -1
+  }
+}
+
+fn parse_step5_asset_count(content: String) -> Int {
+  let json_str = extract_json_from_markdown(content)
+  let parsed = try { @json.parse(json_str) } catch { _ => Json::object(Map::new()) }
+  match parsed {
+    Json::Array(arr) => arr.length()
+    Json::Object(m) => {
+      let mut found = -1
+      for _, v in m {
+        match v {
+          Json::Array(arr) => {
+            found = arr.length()
+            break
+          }
+          _ => ()
+        }
+      }
+      found
+    }
+    _ => -1
+  }
+}
+
 fn start_generation_step(app: App, step: Int) -> Unit {
   app.current_step = step
 
@@ -88,6 +145,7 @@ fn start_generation_step(app: App, step: Int) -> Unit {
   let mut system_prompt = ""
   let mut user_prompt = ""
   let mut scale_node_hint = "4-6 nodes (recommended)"
+  let expected_nodes = count_blueprint_nodes(app.step_contents[2])
   if app.step_contents[0].contains("2-3 scenes") {
     scale_node_hint = "2-3 nodes (at least 3 nodes)"
   } else if app.step_contents[0].contains("4-6 scenes") {
@@ -106,14 +164,18 @@ fn start_generation_step(app: App, step: Int) -> Unit {
     system_prompt = "You are a Game Narrative Designer. Your task is to design the **State Machine Blueprint (Node Topology)** for a branching narrative game based on the World Bible.\nCRITICAL INSTRUCTIONS:\n- You MUST output a FULL, complete list of ALL nodes. Do NOT output '[CONTINUE]', '...', placeholders, or summaries.\n- Node count must follow the requested Game Scale. Target size: " + scale_node_hint + ".\n- Each Node MUST represent a specific scene in the story.\n- DO NOT output pseudo-code conditionals like 'IF ...'.\n\nYou MUST use EXACTLY the following Markdown template for your entire response. Do not add any conversational text before or after the template.\n\n# Tracked Metrics\n- [Metric 1] (e.g., Health)\n- [Metric 2] (e.g., Trust)\n- [Metric 3] (e.g., Wealth)\n\n# Node List\n\n## Node 1: [Node Name]\n**Description:** [1-sentence summary of the plot event here]\n**Choices:**\n- [Choice 1 Text] (+Metric1, -Metric2) -> Leads to Node 2\n- [Choice 2 Text] (+Metric3) -> Leads to Node 3\n\n## Node 2: [Node Name]\n**Description:** [1-sentence summary]\n**Choices:**\n- [Choice 1 Text] -> Leads to Node 4\n\n(Continue this exact format for all remaining nodes. Include at least 1 ending node with empty Choices.)\n" + lang_instruction
     user_prompt = "User Concept:\n" + app.step_contents[0] + "\n\nWorld Bible:\n" + app.step_contents[1]
   } else if step == 3 {
-    system_prompt = "You are a Screenwriter and Art Director. Based on the State Machine Blueprint, flesh out the actual narrative content for every single Node. For each Node, you must provide:\n1. The Node ID (matching the blueprint).\n2. Detailed Narrative Text: Write the actual story, dialogue, and visceral descriptions of the protagonist's actions and environment. Maintain a consistent tone and emotional core. CRITICAL: The story must closely follow the [Story Summary] and [Plot Synopsis] provided in the User Concept.\n3. Cinematography: Describe the environment and lighting for this specific scene. (Keep it a static fixed perspective, no dynamic camera movements).\n4. The Choices available (matching the blueprint exactly).\nCRITICAL: Ensure the story flows seamlessly from one node to its connected target nodes. Foreshadowing planted in early nodes must pay off in later nodes.\nCRITICAL: Every node must be fully written. Never output placeholders like '(from previous...)', '[CONTINUE]', '...', 'TBD', or incomplete fragments.\nCRITICAL LANGUAGE REQUIREMENT: ALL generated story text, dialogue, descriptions, and choices MUST be entirely written in the user's requested language. DO NOT output English if another language is requested.\n" + lang_instruction
+    system_prompt = "You are a Screenwriter and Art Director. Based on the State Machine Blueprint, flesh out the actual narrative content for every single Node. For each Node, you must provide:\n1. The Node ID (matching the blueprint).\n2. Detailed Narrative Text: Write the actual story, dialogue, and visceral descriptions of the protagonist's actions and environment. Maintain a consistent tone and emotional core. CRITICAL: The story must closely follow the [StorySummary] and [PlotSynopsis] provided in the User Concept.\n3. Cinematography: Describe the environment and lighting for this specific scene. (Keep it a static fixed perspective, no dynamic camera movements).\n4. The Choices available (matching the blueprint exactly).\nCRITICAL: Ensure the story flows seamlessly from one node to its connected target nodes. Foreshadowing planted in early nodes must pay off in later nodes.\nCRITICAL: Every node must be fully written. Never output placeholders like '(from previous...)', '[CONTINUE]', '...', 'TBD', or incomplete fragments.\nCRITICAL STRUCTURE: The Blueprint contains exactly " + expected_nodes.to_string() + " nodes. You MUST output all of them (no omission), in order, with matching Node IDs.\nCRITICAL LANGUAGE REQUIREMENT: ALL generated story text, dialogue, descriptions, and choices MUST be entirely written in the user's requested language. DO NOT output English if another language is requested.\n" + lang_instruction
     user_prompt = "User Concept:\n" + app.step_contents[0] + "\n\nWorld Bible:\n" + app.step_contents[1] + "\n\nState Machine Blueprint:\n" + app.step_contents[2]
   } else if step == 4 {
-    system_prompt = "You are a Technical Data Compiler. Your ONLY job is to convert the provided detailed script into a strict JSON state-machine graph. You MUST output a SINGLE valid JSON object with a root key 'nodes' containing an array of node objects.\nEach node must have:\n1. 'id' (string, exactly matching the script)\n2. 'narrative' (object with 'text_content' and 'mood')\n3. 'cinematography' (object with 'environment_desc', 'scale_meters': {width, height, depth}, 'lighting', and 'image_prompt')\n4. 'gameplay' (object with 'required_conditions' map, 'state_changes' map, 'mechanic_trigger' string, and 'choices' array).\nEach choice must have 'text', 'target_id', and optionally 'condition'.\nDO NOT output any markdown, only valid JSON. DO NOT invent new story content; serialize exactly what is provided.\nCRITICAL LANGUAGE REQUIREMENT: ALL text fields ('text_content', 'mood', 'environment_desc', 'lighting', choice 'text') MUST be translated into the user's requested language. ONLY 'image_prompt' must be in English.\n" + lang_instruction + "\nCRITICAL REQUIREMENTS:\n1. 'image_prompt' MUST BE IN ENGLISH. The image prompt should describe the OVERALL SCENE AND ENVIRONMENT matching the Art Style provided in the User Concept. CRITICAL: You MUST explicitly describe the relevant NPC characters (who speak or act in this node) appearing inside this environment. Do NOT describe an empty room. Describe what the NPCs look like and where they are standing in the scene. However, EXPLICITLY EXCLUDE the main protagonist (the player character) from the image_prompt. You MUST append ', static fixed perspective, masterpiece, 8k resolution, unreal engine 5 render, highly detailed' to the end of every image_prompt.\n2. Node ID Validation: Every 'target_id' in 'choices' MUST exactly match the 'id' of an existing node in your output. Endings must have an empty 'choices' array `[]`."
+    system_prompt = "You are a Technical Data Compiler. Your ONLY job is to convert the provided detailed script into a strict JSON state-machine graph. You MUST output a SINGLE valid JSON object with a root key 'nodes' containing an array of node objects.\nEach node must have:\n1. 'id' (string, exactly matching the script)\n2. 'narrative' (object with 'text_content' and 'mood')\n3. 'cinematography' (object with 'environment_desc', 'scale_meters': {width, height, depth}, 'lighting', and 'image_prompt')\n4. 'gameplay' (object with 'required_conditions' map, 'state_changes' map, 'mechanic_trigger' string, and 'choices' array).\nEach choice must have 'text', 'target_id', and optionally 'condition'.\nDO NOT output any markdown, only valid JSON. DO NOT invent new story content; serialize exactly what is provided.\nCRITICAL LANGUAGE REQUIREMENT: ALL text fields ('text_content', 'mood', 'environment_desc', 'lighting', choice 'text') MUST be translated into the user's requested language. ONLY 'image_prompt' must be in English.\nCRITICAL STRUCTURE: You MUST output exactly " + expected_nodes.to_string() + " nodes (same count as the blueprint), with no omission.\n" + lang_instruction + "\nCRITICAL REQUIREMENTS:\n1. 'image_prompt' MUST BE IN ENGLISH. The image prompt should describe the OVERALL SCENE AND ENVIRONMENT matching the Art Style provided in the User Concept. CRITICAL: You MUST explicitly describe the relevant NPC characters (who speak or act in this node) appearing inside this environment. Do NOT describe an empty room. Describe what the NPCs look like and where they are standing in the scene. However, EXPLICITLY EXCLUDE the main protagonist (the player character) from the image_prompt. You MUST append ', static fixed perspective, masterpiece, 8k resolution, unreal engine 5 render, highly detailed' to the end of every image_prompt.\n2. Node ID Validation: Every 'target_id' in 'choices' MUST exactly match the 'id' of an existing node in your output. Endings must have an empty 'choices' array `[]`."
     user_prompt = "User Concept:\n" + app.step_contents[0] + "\n\nState Machine Blueprint:\n" + app.step_contents[2] + "\n\nDetailed Script:\n" + app.step_contents[3]
   } else if step == 5 {
-    system_prompt = "You are a 3D Technical Art Director. Based on the JSON story graph, you must generate exactly one 3D asset entry for EACH node in the story graph, so that the 2D background and 3D environment map 1-to-1. Return a valid JSON array of objects, each containing 'asset_name' (MUST BE exactly the 'id' of the node), 'description', 'image_prompt', and 'estimated_size_meters'.\nCRITICAL INSTRUCTIONS for 'image_prompt':\n- MUST be in English and optimized for 3D model generation input (e.g. Trellis2).\n- You MUST include the relevant NPC characters (who are involved in the story or dialogue of this node) into the 3D diorama/environment description, so they are generated together as part of the scene. EXPLICITLY EXCLUDE the main protagonist (the player character).\n- It MUST describe the object as an isolated 3D model/diorama. Append ', isolated 3d diorama asset on plain white background, overhead isometric view, full complete object, no environment background, masterpiece, 8k resolution, highly detailed' to every prompt.\nDO NOT output any markdown, only valid JSON."
+    system_prompt = "You are a 3D Technical Art Director. Based on the JSON story graph, you must generate exactly one 3D asset entry for EACH node in the story graph, so that the 2D background and 3D environment map 1-to-1. Return a valid JSON array of objects, each containing 'asset_name' (MUST BE exactly the 'id' of the node), 'description', 'image_prompt', and 'estimated_size_meters'.\nCRITICAL STRUCTURE: The story graph has exactly " + expected_nodes.to_string() + " nodes. You MUST output exactly " + expected_nodes.to_string() + " assets, one per node, with no omission.\nCRITICAL INSTRUCTIONS for 'image_prompt':\n- MUST be in English and optimized for 3D model generation input (e.g. Trellis2).\n- You MUST include the relevant NPC characters (who are involved in the story or dialogue of this node) into the 3D diorama/environment description, so they are generated together as part of the scene. EXPLICITLY EXCLUDE the main protagonist (the player character).\n- It MUST describe the object as an isolated 3D model/diorama. Append ', isolated 3d diorama asset on plain white background, overhead isometric view, full complete object, no environment background, masterpiece, 8k resolution, highly detailed' to every prompt.\nDO NOT output any markdown, only valid JSON."
     user_prompt = "User Concept:\n" + app.step_contents[0] + "\n\nState Machine JSON:\n" + app.step_contents[4]
+  }
+
+  if step >= 0 && step < 6 && app.retry_feedback[step] != "" {
+    user_prompt = user_prompt + "\n\n[VALIDATION FEEDBACK]\n" + app.retry_feedback[step] + "\nPlease regenerate this step strictly following the above validation feedback."
   }
 
   // Debug: print current user prompt size to ensure it's not empty
@@ -192,7 +254,9 @@ fn main {
       draft_text: "",
       step_contents: ["", "", "", "", "", ""],
       project_id: "test_proj",
-      config: @config.load_config()
+      config: @config.load_config(),
+      retry_counts: [0, 0, 0, 0, 0, 0],
+      retry_feedback: ["", "", "", "", "", ""]
   }
 
   let window = @webui.webui_new_window()
@@ -801,6 +865,8 @@ fn main {
               app.draft_text = ""
               for i = 0; i < 6; i = i + 1 {
                   app.step_contents[i] = ""
+                  app.retry_counts[i] = 0
+                  app.retry_feedback[i] = ""
               }
               
               // Load step_contents from state.json if it exists, otherwise try to reconstruct
@@ -859,6 +925,10 @@ fn main {
       @webui.system_command("cmd /c if not exist \"" + app.project_id + "\" mkdir \"" + app.project_id + "\"")
       
       app.current_step = 0
+      for i = 0; i < 6; i = i + 1 {
+          app.retry_counts[i] = 0
+          app.retry_feedback[i] = ""
+      }
       start_generation_step(app, 0)
       @webui.webui_set_response(window, event_number, "ok")
   })
@@ -1028,22 +1098,56 @@ fn main {
                 ignore(@fs.remove_file(res_file_pipe) catch { _ => () })
                 
                 let old_step_pipe = app.current_step
-                if content_pipe.has_prefix("Error:") {
+                let mut validation_error = ""
+                if not(content_pipe.has_prefix("Error:")) && old_step_pipe == 4 {
+                    let expected = count_blueprint_nodes(app.step_contents[2])
+                    let actual = parse_step4_node_count(content_pipe)
+                    if expected > 0 && actual > 0 && expected != actual {
+                        validation_error = "Step4 node count mismatch. Expected " + expected.to_string() + " nodes from Blueprint, but got " + actual.to_string() + "."
+                    }
+                }
+                if not(content_pipe.has_prefix("Error:")) && old_step_pipe == 5 {
+                    let expected = count_blueprint_nodes(app.step_contents[2])
+                    let actual = parse_step5_asset_count(content_pipe)
+                    if expected > 0 && actual > 0 && expected != actual {
+                        validation_error = "Step5 asset count mismatch. Expected " + expected.to_string() + " assets from Blueprint, but got " + actual.to_string() + "."
+                    }
+                }
+
+                let mut status_pipe = "progress"
+                if validation_error != "" {
+                    if app.retry_counts[old_step_pipe] < 3 {
+                        app.retry_counts[old_step_pipe] = app.retry_counts[old_step_pipe] + 1
+                        app.retry_feedback[old_step_pipe] =
+                          validation_error +
+                          " This is auto-retry attempt " + app.retry_counts[old_step_pipe].to_string() +
+                          "/3. Keep all blueprint nodes and preserve every Node ID."
+                        content_pipe = "[AUTO-RETRY " + app.retry_counts[old_step_pipe].to_string() + "/3] " + validation_error + " Regenerating this step now."
+                        app.current_step = old_step_pipe
+                        start_generation_step(app, old_step_pipe)
+                        status_pipe = "progress"
+                    } else {
+                        app.retry_counts[old_step_pipe] = 0
+                        app.retry_feedback[old_step_pipe] = ""
+                        content_pipe = "Error: " + validation_error + " Auto-retry exceeded 3 times."
+                        app.current_step = 6
+                        status_pipe = "error"
+                    }
+                } else if content_pipe.has_prefix("Error:") {
                     app.current_step = 6 // stop pipeline
+                    status_pipe = "error"
                 } else {
+                    app.retry_counts[old_step_pipe] = 0
+                    app.retry_feedback[old_step_pipe] = ""
                     app.current_step = app.current_step + 1
-                }
-                
-                if app.current_step < 6 {
-                    start_generation_step(app, app.current_step)
-                }
-                
-                let status_pipe = if content_pipe.has_prefix("Error:") { 
-                    "error" 
-                } else if old_step_pipe == 5 {
-                    "done"
-                } else {
-                    "progress"
+                    if old_step_pipe == 5 {
+                        status_pipe = "done"
+                    } else {
+                        status_pipe = "progress"
+                    }
+                    if app.current_step < 6 {
+                        start_generation_step(app, app.current_step)
+                    }
                 }
                 
                 let resp_json_pipe : Map[String, Json] = {
@@ -1065,6 +1169,8 @@ fn main {
       step = try { @strconv.parse_int(step_str) } catch { _ => -1 }
       
       if step >= 0 && step < 6 {
+          app.retry_counts[step] = 0
+          app.retry_feedback[step] = ""
           app.current_step = step
           start_generation_step(app, step)
           @webui.webui_set_response(window, event_number, "ok")
@@ -1124,11 +1230,75 @@ fn main {
       w |> ignore
       let studio_dir = @net.get_exe_dir()
       let engine_dir = studio_dir + "\\..\\aetheria_engine"
+      let foundry_script = studio_dir + "\\..\\aetheria_foundry\\split_glb_to_chunks.py"
+
+      // Preprocess generated GLBs for Raylib (16-bit index safety):
+      // 1) *_Textured.glb -> *_Textured_optimized.glb
+      // 2) *.glb (non-optimized) -> *_optimized.glb
+      if @fs.path_exists(foundry_script) {
+          let mut prep_ps = "$ErrorActionPreference = 'Continue'\n"
+          prep_ps = prep_ps + "$projectDir = '" + app.project_id.replace_all(old="'", new="''") + "'\n"
+          prep_ps = prep_ps + "$foundry = '" + foundry_script.replace_all(old="'", new="''") + "'\n"
+          prep_ps = prep_ps + "$pyCandidates = @(\n"
+          prep_ps = prep_ps + "  \"$env:USERPROFILE\\.conda\\envs\\trellis2\\python.exe\",\n"
+          prep_ps = prep_ps + "  \"$env:USERPROFILE\\miniconda3\\envs\\trellis2\\python.exe\",\n"
+          prep_ps = prep_ps + "  \"$env:USERPROFILE\\anaconda3\\envs\\trellis2\\python.exe\",\n"
+          prep_ps = prep_ps + "  \"$env:USERPROFILE\\mambaforge\\envs\\trellis2\\python.exe\"\n"
+          prep_ps = prep_ps + ")\n"
+          prep_ps = prep_ps + "$pyExe = $pyCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1\n"
+          prep_ps = prep_ps + "$condaCandidates = @(\n"
+          prep_ps = prep_ps + "  \"$env:USERPROFILE\\miniconda3\\condabin\\conda.bat\",\n"
+          prep_ps = prep_ps + "  \"$env:USERPROFILE\\anaconda3\\condabin\\conda.bat\",\n"
+          prep_ps = prep_ps + "  \"$env:USERPROFILE\\mambaforge\\condabin\\conda.bat\"\n"
+          prep_ps = prep_ps + ")\n"
+          prep_ps = prep_ps + "$condaCmd = $condaCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1\n"
+          prep_ps = prep_ps + "if (-not $condaCmd) {\n"
+          prep_ps = prep_ps + "  $whereConda = (Get-Command conda -ErrorAction SilentlyContinue)\n"
+          prep_ps = prep_ps + "  if ($whereConda) { $condaCmd = $whereConda.Source }\n"
+          prep_ps = prep_ps + "}\n"
+          prep_ps = prep_ps + "if (-not $pyExe -and -not $condaCmd) {\n"
+          prep_ps = prep_ps + "  Write-Host '[WARN] Conda not found. Skip GLB optimization.'\n"
+          prep_ps = prep_ps + "  exit 0\n"
+          prep_ps = prep_ps + "}\n"
+          prep_ps = prep_ps + "if ($pyExe) {\n"
+          prep_ps = prep_ps + "  & $pyExe -c \"import trimesh, numpy\" 2>$null\n"
+          prep_ps = prep_ps + "} else {\n"
+          prep_ps = prep_ps + "  & $condaCmd run -n trellis2 python -c \"import trimesh, numpy\" 2>$null\n"
+          prep_ps = prep_ps + "}\n"
+          prep_ps = prep_ps + "if ($LASTEXITCODE -ne 0) {\n"
+          prep_ps = prep_ps + "  Write-Host '[WARN] Missing Python deps (trimesh/numpy). Trying to install...'\n"
+          prep_ps = prep_ps + "  if ($pyExe) {\n"
+          prep_ps = prep_ps + "    & $pyExe -m pip install trimesh numpy 2>$null\n"
+          prep_ps = prep_ps + "    & $pyExe -c \"import trimesh, numpy\" 2>$null\n"
+          prep_ps = prep_ps + "  } else {\n"
+          prep_ps = prep_ps + "    & $condaCmd run -n trellis2 python -m pip install trimesh numpy 2>$null\n"
+          prep_ps = prep_ps + "    & $condaCmd run -n trellis2 python -c \"import trimesh, numpy\" 2>$null\n"
+          prep_ps = prep_ps + "  }\n"
+          prep_ps = prep_ps + "  if ($LASTEXITCODE -ne 0) {\n"
+          prep_ps = prep_ps + "    Write-Host '[WARN] Install failed. Skip GLB optimization.'\n"
+          prep_ps = prep_ps + "    exit 0\n"
+          prep_ps = prep_ps + "  }\n"
+          prep_ps = prep_ps + "}\n"
+          prep_ps = prep_ps + "$glbs = Get-ChildItem -Path $projectDir -Filter *.glb -File | Where-Object { $_.BaseName -notmatch '_optimized$' }\n"
+          prep_ps = prep_ps + "foreach ($f in $glbs) {\n"
+          prep_ps = prep_ps + "  $out = Join-Path $projectDir ($f.BaseName + '_optimized.glb')\n"
+          prep_ps = prep_ps + "  if (-not (Test-Path $out)) {\n"
+          prep_ps = prep_ps + "    Write-Host ('[chunk] ' + $f.Name + ' -> ' + [System.IO.Path]::GetFileName($out))\n"
+          prep_ps = prep_ps + "    if ($pyExe) {\n"
+          prep_ps = prep_ps + "      & $pyExe $foundry $f.FullName $out 60000\n"
+          prep_ps = prep_ps + "    } else {\n"
+          prep_ps = prep_ps + "      & $condaCmd run -n trellis2 python $foundry $f.FullName $out 60000\n"
+          prep_ps = prep_ps + "    }\n"
+          prep_ps = prep_ps + "  }\n"
+          prep_ps = prep_ps + "}\n"
+          let prep_ps_path = app.project_id + "\\prepare_raylib_glb.ps1"
+          let _ = @net.write_file_bytes(prep_ps_path, @utf8.encode(prep_ps))
+          @webui.system_command("powershell -ExecutionPolicy Bypass -File \"" + prep_ps_path + "\"")
+      }
+
       let candidates = [
           engine_dir + "\\Aetheria3D_GLB.exe",
-          engine_dir + "\\Aetheria3D.exe",
-          engine_dir + "\\_build\\native\\debug\\build\\cmd_glb\\cmd_glb.exe",
-          engine_dir + "\\_build\\native\\debug\\build\\cmd\\main\\main.exe"
+          engine_dir + "\\_build\\native\\debug\\build\\cmd_glb\\cmd_glb.exe"
       ]
       let mut target_exe = ""
       for i = 0; i < candidates.length(); i = i + 1 {

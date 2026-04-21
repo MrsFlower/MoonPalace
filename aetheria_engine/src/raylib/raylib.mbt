@@ -47,6 +47,8 @@ extern "C" fn get_mouse_wheel_move_wrapper() -> Double = "get_mouse_wheel_move_w
 extern "C" fn clear_text_buffer() = "clear_text_buffer"
 extern "C" fn append_text_char(c: Int) = "append_text_char"
 extern "C" fn draw_text_from_buffer(x: Int, y: Int, fontSize: Int, r: Int, g: Int, b: Int, a: Int) = "draw_text_from_buffer"
+extern "C" fn load_ui_font_from_buffer(fontSize: Int) -> Int = "load_ui_font_from_buffer"
+extern "C" fn refresh_ui_font_charset_from_buffer() -> Int = "refresh_ui_font_charset_from_buffer"
 extern "C" fn draw_rectangle_wrapper(x: Int, y: Int, w: Int, h: Int, r: Int, g: Int, b: Int, a: Int) = "DrawRectangle_wrapper"
 extern "C" fn draw_rectangle_lines_wrapper(x: Int, y: Int, w: Int, h: Int, r: Int, g: Int, b: Int, a: Int) = "DrawRectangleLines_wrapper"
 
@@ -137,6 +139,22 @@ pub fn draw_text(text: String, x: Int, y: Int, fontSize: Int, r: Int, g: Int, b:
     append_text_char(c.to_int())
   }
   draw_text_from_buffer(x, y, fontSize, r, g, b, a)
+}
+
+pub fn load_ui_font(path: String, font_size: Int) -> Bool {
+  clear_text_buffer()
+  for c in path {
+    append_text_char(c.to_int())
+  }
+  load_ui_font_from_buffer(font_size) != 0
+}
+
+pub fn refresh_ui_font_charset(sample_text: String) -> Bool {
+  clear_text_buffer()
+  for c in sample_text {
+    append_text_char(c.to_int())
+  }
+  refresh_ui_font_charset_from_buffer() != 0
 }
 
 pub fn draw_rectangle(x: Int, y: Int, w: Int, h: Int, r: Int, g: Int, b: Int, a: Int) -> Unit {

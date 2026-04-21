@@ -3,8 +3,9 @@ import trimesh
 import numpy as np
 import os
 import math
+import sys
 
-def split_mesh(glb_path, output_dir, max_vertices=60000):
+def split_mesh(glb_path, output_path, max_vertices=60000):
     print(f"Loading {glb_path}...")
     scene = trimesh.load(glb_path, force="scene")
     
@@ -28,12 +29,12 @@ def split_mesh(glb_path, output_dir, max_vertices=60000):
     
     if len(base_mesh.vertices) <= max_vertices:
         print("Model is already small enough. Exporting as is.")
-        os.makedirs(output_dir, exist_ok=True)
-        base_mesh.export(os.path.join(output_dir, "chunk_0.glb"))
+        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+        base_mesh.export(output_path)
         return
         
     print(f"Model exceeds {max_vertices} vertices. Splitting into chunks...")
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     
     # Simple strategy: Sort faces by their centroid X, Y, or Z coordinate, 
     # and split them into chunks of faces that have <= max_vertices vertices.
@@ -100,10 +101,15 @@ def split_mesh(glb_path, output_dir, max_vertices=60000):
             scene_out.add_geometry(submesh, node_name=f"chunk_{chunk_id}")
             chunk_id += 1
             
-    out_path = os.path.join(output_dir, "optimized_dwarf.glb")
-    scene_out.export(out_path)
-    print(f"Saved optimized single model to {out_path} with {chunk_id} sub-meshes.")
+    scene_out.export(output_path)
+    print(f"Saved optimized single model to {output_path} with {chunk_id} sub-meshes.")
 
 if __name__ == "__main__":
-    split_mesh("../Trellis2output/DwarfWarrior_Textured_00003_.glb", "../aetheria_engine/assets")
+    if len(sys.argv) < 3:
+        print("Usage: python split_glb_to_chunks.py <input.glb> <output.glb> [max_vertices]")
+        sys.exit(1)
+    inp = sys.argv[1]
+    outp = sys.argv[2]
+    mv = int(sys.argv[3]) if len(sys.argv) >= 4 else 60000
+    split_mesh(inp, outp, max_vertices=mv)
 
